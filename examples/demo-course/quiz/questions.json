@@ -1,0 +1,116 @@
+[
+  {
+    "id": "authoring-01",
+    "topic": "authoring",
+    "lesson": "course-json",
+    "type": "single-choice",
+    "prompt": "Where does the shell get a course's site name from?",
+    "options": [
+      { "id": "a", "text": "The first lesson's title" },
+      { "id": "b", "text": "The \"name\" field in course.json" },
+      { "id": "c", "text": "A constant in the shell's source code" },
+      { "id": "d", "text": "The repository description on GitHub" }
+    ],
+    "answer": "b",
+    "explanation": "The shell holds no course-specific text. Name, colours and home page copy all come from course.json."
+  },
+  {
+    "id": "authoring-02",
+    "topic": "authoring",
+    "lesson": "course-json",
+    "type": "single-choice",
+    "prompt": "A course.json sets only \"brand\": { \"color\": \"#0D9488\" }. What happens to the lighter and darker brand shades?",
+    "options": [
+      { "id": "a", "text": "Validation fails until all eleven shades are listed" },
+      { "id": "b", "text": "The shell falls back to its own default colours" },
+      { "id": "c", "text": "The shell derives the scale, the gradient and the logo from that one colour" },
+      { "id": "d", "text": "The site is drawn in black and white" }
+    ],
+    "answer": "c",
+    "explanation": "One colour is enough. An exact scale and gradient are optional, for a course that needs precise brand colours."
+  },
+  {
+    "id": "authoring-03",
+    "topic": "authoring",
+    "lesson": "course-json",
+    "type": "multiple-choice",
+    "prompt": "Which of these are set per course in course.json? (Select all that apply.)",
+    "options": [
+      { "id": "a", "text": "The kinds a lesson can be" },
+      { "id": "b", "text": "The languages that code blocks may use" },
+      { "id": "c", "text": "The layout of the lesson page" },
+      { "id": "d", "text": "The home page headline" }
+    ],
+    "answer": ["a", "b", "d"],
+    "explanation": "Kinds, code languages and home page copy belong to the course. Layout belongs to the shell and is the same everywhere."
+  },
+  {
+    "id": "authoring-04",
+    "topic": "authoring",
+    "lesson": "writing-a-bite",
+    "type": "fill-blank",
+    "prompt": "Which section of a bite must contain exactly three bullets?",
+    "answer": ["Remember", "## Remember"],
+    "explanation": "Remember always lists exactly three takeaways. The validator counts them."
+  },
+  {
+    "id": "authoring-05",
+    "topic": "authoring",
+    "lesson": "writing-a-bite",
+    "type": "match-pair",
+    "prompt": "Match each shape of information to the visual that fits it.",
+    "pairs": [
+      { "left": "Things compared on the same properties", "right": "Table" },
+      { "left": "Steps between parties over time", "right": "Sequence diagram" },
+      { "left": "A choice between options", "right": "Tree diagram" },
+      { "left": "What depends on what", "right": "Flow diagram" }
+    ],
+    "explanation": "Choose the visual from the shape of the information, not out of habit."
+  },
+  {
+    "id": "authoring-06",
+    "topic": "authoring",
+    "lesson": "writing-a-bite",
+    "type": "single-choice",
+    "prompt": "A draft bite comes out at seven minutes. What should you do?",
+    "options": [
+      { "id": "a", "text": "Type a shorter reading time into the front-matter" },
+      { "id": "b", "text": "Split it into two bites and link them as related" },
+      { "id": "c", "text": "Move the extra text into a sixth section" },
+      { "id": "d", "text": "Remove the example to save space" }
+    ],
+    "answer": "b",
+    "explanation": "Reading time is computed, never typed, and the limit is five minutes. A longer bite is two ideas."
+  },
+  {
+    "id": "authoring-07",
+    "topic": "authoring",
+    "lesson": "preview-validate-deploy",
+    "type": "ordering",
+    "prompt": "Put the steps of publishing a change to a course in order.",
+    "items": [
+      { "id": "s1", "text": "Edit a lesson while the dev preview is running" },
+      { "id": "s2", "text": "Run validate with --strict" },
+      { "id": "s3", "text": "Push to the main branch" },
+      { "id": "s4", "text": "The workflow checks out the shell, validates and builds" },
+      { "id": "s5", "text": "GitHub Pages serves the new site" }
+    ],
+    "answer": ["s1", "s2", "s3", "s4", "s5"],
+    "explanation": "Preview and validate locally, then push. The workflow repeats the strict check before it builds and deploys."
+  },
+  {
+    "id": "authoring-08",
+    "topic": "authoring",
+    "lesson": "preview-validate-deploy",
+    "type": "single-choice",
+    "prompt": "The shared interface was improved in the shell repository. When does an existing course get the change?",
+    "options": [
+      { "id": "a", "text": "Immediately, without any deploy" },
+      { "id": "b", "text": "Never, unless the interface code is copied into the course" },
+      { "id": "c", "text": "The next time the course's deploy workflow runs" },
+      { "id": "d", "text": "Only after its course.json is rewritten" }
+    ],
+    "answer": "c",
+    "explanation": "Each deploy builds the course with the latest shell, so a push or a manual workflow run picks the change up."
+  }
+]

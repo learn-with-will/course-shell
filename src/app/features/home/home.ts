@@ -4,8 +4,29 @@ import { CourseService } from '../../core/services/course.service';
 import { ProgressService } from '../../core/services/progress.service';
 import { QuizService } from '../../core/services/quiz.service';
 import { SearchService } from '../../core/services/search.service';
+import { COURSE, CodeSample } from '../../core/course/course';
 import { KIND_CHIPS, KIND_LABELS, Topic } from '../../core/models/lesson.model';
 import { LessonCard } from '../../shared/components/lesson-card/lesson-card';
+
+/** Prism is loaded as a global script (angular.json), with the course's languages. */
+declare const Prism:
+  | { languages: Record<string, unknown>; highlight(code: string, grammar: unknown, language: string): string }
+  | undefined;
+
+/** The sample as highlighted HTML, or as plain escaped text when its language is not loaded. */
+function highlight(sample: CodeSample): string {
+  const grammar = typeof Prism === 'undefined' ? undefined : Prism.languages[sample.lang];
+  if (grammar) return Prism!.highlight(sample.code, grammar, sample.lang);
+  return sample.code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** "Try “a”, “b” or “c”" for the search box, from the course's example words. */
+function searchHint(examples: string[]): string {
+  if (!examples.length) return 'Search lessons';
+  const quoted = examples.map((word) => `“${word}”`);
+  const last = quoted.pop();
+  return quoted.length ? `Try ${quoted.join(', ')} or ${last}` : `Try ${last}`;
+}
 
 interface TopicTile {
   topic: Topic;
@@ -29,6 +50,13 @@ export class Home {
 
   protected readonly kindLabels = KIND_LABELS;
   protected readonly kindChips = KIND_CHIPS;
+
+  // Course-specific copy, from course.json.
+  protected readonly home = COURSE.home;
+  protected readonly subject = COURSE.subject;
+  protected readonly hasCode = COURSE.hasCode;
+  protected readonly searchPlaceholder = searchHint(COURSE.home.searchExamples);
+  protected readonly featuredCode = COURSE.home.featuredCode ? highlight(COURSE.home.featuredCode) : null;
 
   constructor() {
     void this.quiz.load().catch(() => undefined);
@@ -65,9 +93,9 @@ export class Home {
     return first ? this.course.byTopic(first.id)[0] : undefined;
   });
 
-  /** The bite shown in the hero card. */
+  /** The bite shown in the hero card: the one the course names, else the first. */
   protected readonly featured = computed(
-    () => this.course.getBySlug('computed') ?? this.course.lessons()[0],
+    () => this.course.getBySlug(COURSE.home.featuredLesson ?? '') ?? this.course.lessons()[0],
   );
 
   protected readonly topicTiles = computed<TopicTile[]>(() => {

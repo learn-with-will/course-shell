@@ -1,25 +1,20 @@
-// Generates public/content/course-manifest.json from the micro-lessons.
+// Builds a course's manifest (the lesson index the app loads) from its micro-lessons.
 //
-// Sources (all under public/content):
+// Sources, all under <course>/content (see coursePaths in course-config.mjs):
 //   lessons/*.md   one bite per file; YAML front-matter carries the metadata
-//   topics.json    the ~14 topics, in display order
-//   legacy.json    map from the 35 old long lessons to the bites that replaced them
+//   topics.json    the topics, in display order
+//   legacy.json    optional: map from old long lessons to the bites that replaced them
 //
 // Output: { topics, lessons, legacy }. `minutes` is computed here from the body
-// (never hand-written), and topic counts are filled in. Run: `npm run manifest`.
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+// (never hand-written), and topic counts are filled in. prepare-course.mjs writes
+// the result into the build; it is never committed.
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 // The diagram language is TypeScript shared with the app; Node strips the types.
 import { DIAGRAM_KINDS, diagramText, parseDiagram } from '../src/app/shared/diagram/diagram-parser.ts';
 
 /** Fence languages that draw a diagram (sequence, tree, flow) instead of showing code. */
 export const DIAGRAM_LANGS = new Set(DIAGRAM_KINDS);
-
-export const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export const contentDir = resolve(root, 'public', 'content');
-export const lessonsDir = resolve(contentDir, 'lessons');
-export const manifestPath = resolve(contentDir, 'course-manifest.json');
 
 /**
  * Reading speed used for the estimate: prose words per minute and code lines per minute.
@@ -162,20 +157,22 @@ export function analyzeBody(body) {
   return { words, blocks, codeLines, minutes: estimateMinutes(words, codeLines) };
 }
 
-export function readJson(name) {
-  return JSON.parse(readFileSync(resolve(contentDir, name), 'utf8'));
+/** Parses a JSON file; a missing file gives `fallback` when one is passed. */
+export function readJson(file, fallback) {
+  if (fallback !== undefined && !existsSync(file)) return fallback;
+  return JSON.parse(readFileSync(file, 'utf8'));
 }
 
 /** Reads every lesson file. Returns `{ file, slug, meta, body, stats }[]` sorted by filename. */
-export function readLessonFiles() {
+export function readLessonFiles(paths) {
   let files = [];
   try {
-    files = readdirSync(lessonsDir).filter((f) => f.endsWith('.md'));
+    files = readdirSync(paths.lessons).filter((f) => f.endsWith('.md'));
   } catch {
     /* no lessons yet */
   }
   return files.sort().map((file) => {
-    const raw = readFileSync(resolve(lessonsDir, file), 'utf8');
+    const raw = readFileSync(resolve(paths.lessons, file), 'utf8');
     try {
       const { block, body } = splitFrontMatter(raw);
       const meta = parseFrontMatter(block);
@@ -186,8 +183,9 @@ export function readLessonFiles() {
   });
 }
 
-export function buildManifest() {
-  const lessons = readLessonFiles()
+/** `paths` comes from coursePaths(courseDir). */
+export function buildManifest(paths) {
+  const lessons = readLessonFiles(paths)
     .filter((l) => !l.error)
     .map(({ file, meta, stats }) => {
       const entry = {
@@ -210,23 +208,14 @@ export function buildManifest() {
   for (const l of lessons) counts.set(l.topic, (counts.get(l.topic) ?? 0) + 1);
   const topicByLesson = new Map(lessons.map((l) => [l.slug, l.topic]));
 
-  const topics = readJson('topics.json')
+  const topics = readJson(paths.topics)
     .map((t) => ({ ...t, count: counts.get(t.id) ?? 0 }))
     .sort((a, b) => a.order - b.order);
 
-  const legacy = readJson('legacy.json').map((entry) => {
+  const legacy = readJson(paths.legacy, []).map((entry) => {
     const topic = topicByLesson.get(entry.lessons[0]);
     return topic ? { ...entry, topic } : entry;
   });
 
   return { topics, lessons, legacy };
-}
-
-// Only run when invoked directly (not when imported by the validator).
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const manifest = buildManifest();
-  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
-  console.log(
-    `generate-manifest: ${manifest.lessons.length} lessons, ${manifest.topics.filter((t) => t.count).length} topics → ${manifestPath}`,
-  );
 }

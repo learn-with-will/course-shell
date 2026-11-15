@@ -6,7 +6,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "learning-portal": {
+    "course-shell": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -24,7 +24,7 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": ".course/public"
               }
             ],
             "styles": [
@@ -33,10 +33,9 @@
             ],
             "scripts": [
               "node_modules/prismjs/prism.js",
-              "node_modules/prismjs/components/prism-typescript.min.js",
-              "node_modules/prismjs/components/prism-bash.min.js",
-              "node_modules/prismjs/components/prism-json.min.js"
-            ]
+              ".course/prism-languages.js"
+            ],
+            "index": ".course/index.html"
           },
           "configurations": {
             "production": {
@@ -66,10 +65,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "learning-portal:build:production"
+              "buildTarget": "course-shell:build:production"
             },
             "development": {
-              "buildTarget": "learning-portal:build:development"
+              "buildTarget": "course-shell:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -88,7 +87,7 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": ".course/public"
               }
             ],
             "styles": [

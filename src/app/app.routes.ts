@@ -1,13 +1,14 @@
 import { Routes } from '@angular/router';
+import { COURSE } from './core/course/course';
 import { legacyLessonGuard, legacyQuizGuard, randomGuard } from './core/guards/course.guards';
 
-const SITE = 'Angular Learn';
+const SITE = COURSE.name;
 
 export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./features/home/home').then((m) => m.Home),
-    title: `${SITE} · Angular in 5-minute bites`,
+    title: `${SITE} · ${COURSE.subject} in 5-minute bites`,
   },
   {
     path: 'lessons',

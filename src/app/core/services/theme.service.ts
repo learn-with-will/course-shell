@@ -1,7 +1,8 @@
 import { Injectable, effect, signal } from '@angular/core';
+import { COURSE } from '../course/course';
 
 type Theme = 'light' | 'dark';
-const THEME_KEY = 'angular-learning-theme';
+const THEME_KEY = `${COURSE.id}-learning-theme`;
 
 /** Tracks light/dark preference, persists it, and toggles `.dark` on <html>. */
 @Injectable({ providedIn: 'root' })

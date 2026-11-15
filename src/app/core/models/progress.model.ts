@@ -1,3 +1,4 @@
+import { COURSE } from '../course/course';
 import { QuizMode } from './quiz.model';
 
 /** Running tally for one question. `lastCorrect` drives the "Missed" quiz mode. */
@@ -30,9 +31,10 @@ export interface UserProgress {
   legacyImported: string[];
 }
 
-export const PROGRESS_STORAGE_KEY = 'angular-learning-progress-v2';
-/** The v1 key, read once to carry old completions and bookmarks over. */
-export const LEGACY_PROGRESS_STORAGE_KEY = 'angular-learning-progress';
+// Every course is served from the same origin, so each needs keys of its own.
+export const PROGRESS_STORAGE_KEY = `${COURSE.id}-learning-progress-v2`;
+/** The key of the old long-lesson shell, read once to carry completions and bookmarks over. */
+export const LEGACY_PROGRESS_STORAGE_KEY = `${COURSE.id}-learning-progress`;
 
 export const MAX_SESSIONS = 50;
 

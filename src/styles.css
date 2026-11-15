@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+/* Brand colours and gradients of the course being built (scripts/prepare-course.mjs). */
+@import './generated/theme.css';
 
 /* Class-based dark mode toggled by ThemeService (adds .dark on <html>) */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -6,33 +8,16 @@
 /* ---------------------------------------------------------------------------
    Design tokens: the "Bites" look
 
-   Calm paper and ink surfaces with one accent: the domain's own brand colour.
-   Every portal under learning-portal/ anchors on its technology's brand (React
-   is cyan, this one is Angular). To re-brand, change only the `brand-*` scale
-   and `--gradient-brand` below.
-
-   `brand-*` is Angular red (#DD0031 at 600): primary actions, links, progress.
-   `--gradient-brand` is Angular's red → magenta → purple gradient, used for the
-   logo and highlighted headline words. `magenta-*` marks saved bites, `ink-*`
-   are the neutrals.
+   Calm paper and ink surfaces with one accent: the course's own brand colour.
+   The shell holds no brand of its own. `brand-*` (primary actions, links,
+   progress), `--gradient-brand` (the logo and highlighted headline words) and
+   `--shadow-glow` come from the course's course.json through
+   `generated/theme.css`. `magenta-*` marks saved bites, `ink-*` are the neutrals.
 --------------------------------------------------------------------------- */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Bricolage Grotesque', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-
-  /* Domain brand: Angular red */
-  --color-brand-50: #fff1f3;
-  --color-brand-100: #ffe1e6;
-  --color-brand-200: #ffc7d1;
-  --color-brand-300: #ff9aab;
-  --color-brand-400: #ff5c7a;
-  --color-brand-500: #f5244f;
-  --color-brand-600: #dd0031;
-  --color-brand-700: #b8002a;
-  --color-brand-800: #990428;
-  --color-brand-900: #820726;
-  --color-brand-950: #48000f;
 
   /* Magenta: saved bites */
   --color-magenta-50: #fff0f7;
@@ -46,10 +31,6 @@
   --color-magenta-800: #800a40;
   --color-magenta-900: #690b37;
   --color-magenta-950: #40031f;
-
-  /* Angular red (logo gradient origin) */
-  --color-ember-500: #e40035;
-  --color-ember-600: #c30030;
 
   /* Paper → ink neutrals with a faint violet tint */
   --color-ink-50: #f7f7fa;
@@ -67,7 +48,6 @@
   --shadow-soft: 0 1px 2px rgb(20 17 28 / 0.04);
   --shadow-lift: 0 2px 6px rgb(20 17 28 / 0.04), 0 18px 40px rgb(20 17 28 / 0.1);
   --shadow-float: 0 2px 6px rgb(20 17 28 / 0.05), 0 30px 60px rgb(20 17 28 / 0.14);
-  --shadow-glow: 0 8px 22px rgb(221 0 49 / 0.26);
 
   --animate-fade-up: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-fade-in: fade-in 0.35s ease-out both;
@@ -103,14 +83,6 @@
     opacity: 1;
     transform: none;
   }
-}
-
-:root {
-  --gradient-brand: linear-gradient(100deg, #e40035 0%, #f20089 48%, #6002ee 100%);
-}
-/* Lighter stops in dark mode, so the purple end stays readable on ink. */
-.dark {
-  --gradient-brand: linear-gradient(100deg, #ff4d6d 0%, #ff5bb8 48%, #a77bff 100%);
 }
 
 html {
@@ -225,29 +197,30 @@ body {
   @apply inline-flex items-center gap-1.5 rounded-lg px-2 py-0.5 text-xs font-bold;
 }
 
-/* One badge colour per lesson kind (see KIND_CHIPS in lesson.model.ts).
+/* Badge colours for lesson kinds: a course gives each kind one of these tones
+   (see TONE_CHIPS in lesson.model.ts).
    Soft tint + dark text of the same hue; every pair passes 4.5:1. */
-@utility kind-concept {
+@utility chip-violet {
   @apply inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-2 py-0.5 text-xs font-bold text-violet-700 dark:bg-violet-950 dark:text-violet-300;
 }
 
-@utility kind-api {
+@utility chip-blue {
   @apply inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300;
 }
 
-@utility kind-technique {
+@utility chip-emerald {
   @apply inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300;
 }
 
-@utility kind-pattern {
+@utility chip-cyan {
   @apply inline-flex items-center gap-1.5 rounded-lg bg-cyan-50 px-2 py-0.5 text-xs font-bold text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300;
 }
 
-@utility kind-pitfall {
+@utility chip-orange {
   @apply inline-flex items-center gap-1.5 rounded-lg bg-orange-50 px-2 py-0.5 text-xs font-bold text-orange-800 dark:bg-orange-950 dark:text-orange-300;
 }
 
-@utility kind-tool {
+@utility chip-neutral {
   @apply inline-flex items-center gap-1.5 rounded-lg bg-ink-100 px-2 py-0.5 text-xs font-bold text-ink-700 dark:bg-ink-800 dark:text-ink-200;
 }
 
@@ -286,7 +259,7 @@ body {
   @apply text-ink-500 dark:text-ink-400;
 }
 
-/* Highlighted words in a headline, in Angular's brand gradient. */
+/* Highlighted words in a headline, in the course's brand gradient. */
 @utility gradient-text {
   background-image: var(--gradient-brand);
   -webkit-box-decoration-break: clone;
@@ -459,35 +432,35 @@ kbd {
   font-size: 0.875rem;
   line-height: 1.8;
 }
-.lesson-content .token.comment,
-.lesson-content .token.prolog,
-.lesson-content .token.doctype {
+:is(.lesson-content, .code-sample) .token.comment,
+:is(.lesson-content, .code-sample) .token.prolog,
+:is(.lesson-content, .code-sample) .token.doctype {
   color: #8f88a6;
 }
-.lesson-content .token.keyword,
-.lesson-content .token.tag,
-.lesson-content .token.boolean,
-.lesson-content .token.important {
+:is(.lesson-content, .code-sample) .token.keyword,
+:is(.lesson-content, .code-sample) .token.tag,
+:is(.lesson-content, .code-sample) .token.boolean,
+:is(.lesson-content, .code-sample) .token.important {
   color: #c4a7ff;
 }
-.lesson-content .token.function,
-.lesson-content .token.class-name,
-.lesson-content .token.builtin {
+:is(.lesson-content, .code-sample) .token.function,
+:is(.lesson-content, .code-sample) .token.class-name,
+:is(.lesson-content, .code-sample) .token.builtin {
   color: #7fb2ff;
 }
-.lesson-content .token.number,
-.lesson-content .token.constant,
-.lesson-content .token.attr-name {
+:is(.lesson-content, .code-sample) .token.number,
+:is(.lesson-content, .code-sample) .token.constant,
+:is(.lesson-content, .code-sample) .token.attr-name {
   color: #ffb38a;
 }
-.lesson-content .token.string,
-.lesson-content .token.char,
-.lesson-content .token.attr-value,
-.lesson-content .token.template-string {
+:is(.lesson-content, .code-sample) .token.string,
+:is(.lesson-content, .code-sample) .token.char,
+:is(.lesson-content, .code-sample) .token.attr-value,
+:is(.lesson-content, .code-sample) .token.template-string {
   color: #a8e6a3;
 }
-.lesson-content .token.punctuation,
-.lesson-content .token.operator {
+:is(.lesson-content, .code-sample) .token.punctuation,
+:is(.lesson-content, .code-sample) .token.operator {
   color: #b9b2d0;
 }
 

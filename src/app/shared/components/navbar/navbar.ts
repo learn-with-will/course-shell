@@ -1,5 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { COURSE } from '../../../core/course/course';
 import { CourseService } from '../../../core/services/course.service';
 import { ThemeService } from '../../../core/services/theme.service';
 import { AccountMenu } from '../account-menu/account-menu';
@@ -22,6 +23,7 @@ export class Navbar {
   private readonly course = inject(CourseService);
   private readonly router = inject(Router);
 
+  protected readonly siteName = COURSE.name;
   protected readonly total = computed(() => this.course.lessons().length);
 
   /** Shown on the search button; Mac users expect ⌘ rather than Ctrl. */

@@ -102,7 +102,7 @@
             </span>
             @if (l.meta.since) {
               <span aria-hidden="true">·</span>
-              <span>Angular {{ l.meta.since }}+</span>
+              <span>{{ subject }} {{ l.meta.since }}+</span>
             }
             @if (learned()) {
               <span class="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">

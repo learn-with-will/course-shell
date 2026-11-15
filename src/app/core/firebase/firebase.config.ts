@@ -1,3 +1,5 @@
+import { COURSE } from '../course/course';
+
 /**
  * Firebase settings for optional sign-in and progress sync.
  *
@@ -36,7 +38,7 @@ export const FIREBASE_CONFIG: FirebaseWebConfig = {
 };
 
 /** Which course this app is; names its progress document in Firestore. */
-export const COURSE_ID = 'angular';
+export const COURSE_ID = COURSE.id;
 
 /** Sign-in methods offered in the dialog. Each one must also be enabled in the Firebase console. */
 export type AuthProviderId = 'google' | 'github';
@@ -53,7 +55,7 @@ export const USE_EMULATORS = false;
 export const EMULATOR_CONFIG: FirebaseWebConfig = {
   apiKey: 'demo-key',
   authDomain: 'localhost',
-  projectId: 'demo-angular-learn',
+  projectId: 'demo-course-shell',
   appId: 'demo-app',
 };
 

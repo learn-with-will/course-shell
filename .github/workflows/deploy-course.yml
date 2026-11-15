@@ -1,0 +1,75 @@
+name: Deploy a course
+
+# Reusable workflow: builds a course with this shell and publishes it to GitHub Pages.
+# A course repository calls it from its own .github/workflows/deploy.yml
+# (see examples/demo-course/.github/workflows/deploy.yml):
+#
+#   jobs:
+#     deploy:
+#       uses: learn-with-will/course-shell/.github/workflows/deploy-course.yml@main
+#
+# The calling workflow grants the permissions: contents: read, pages: write, id-token: write.
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the course
+        uses: actions/checkout@v4
+        with:
+          path: course
+
+      # Always the latest shell, so a course picks up UI changes on its next deploy.
+      - name: Check out the shell
+        uses: actions/checkout@v4
+        with:
+          repository: learn-with-will/course-shell
+          ref: main
+          path: shell
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: shell/package-lock.json
+
+      - run: npm ci
+        working-directory: shell
+
+      # Release gate: fails on a wrong course.json, a broken lesson, a topic with
+      # no lessons or too few questions, or a bad quiz question.
+      - name: Validate course
+        run: npm run validate -- ../course --strict
+        working-directory: shell
+
+      # Project sites are served from https://<org>.github.io/<repo>/, so the app
+      # is built with that subpath as its base href, taken from the repository name.
+      - name: Build
+        run: npm run build -- ../course --base-href "/${GITHUB_REPOSITORY#*/}/"
+        working-directory: shell
+
+      # SPA deep-link fallback: GitHub Pages has no URL rewriting, so a direct hit
+      # on /lesson/:slug returns 404.html. A copy of index.html there lets the
+      # router take over and render the route.
+      - name: Add SPA 404 fallback
+        run: cp shell/dist/course-shell/browser/index.html shell/dist/course-shell/browser/404.html
+
+      - name: Disable Jekyll
+        run: touch shell/dist/course-shell/browser/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: shell/dist/course-shell/browser
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

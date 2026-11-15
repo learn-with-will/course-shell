@@ -20,6 +20,7 @@ import { MarkdownComponent } from 'ngx-markdown';
 import { CourseService } from '../../core/services/course.service';
 import { LessonService } from '../../core/services/lesson.service';
 import { ProgressService } from '../../core/services/progress.service';
+import { COURSE } from '../../core/course/course';
 import { KIND_CHIPS, KIND_LABELS, Lesson } from '../../core/models/lesson.model';
 import { RelatedLessons } from '../../shared/components/related-lessons/related-lessons';
 import { Diagram } from '../../shared/diagram/diagram';
@@ -78,6 +79,7 @@ export class LessonPage {
   protected readonly lesson = signal<Lesson | null>(null);
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
+  protected readonly subject = COURSE.subject;
 
   protected readonly learned = computed(() => {
     const l = this.lesson();
@@ -164,7 +166,7 @@ export class LessonPage {
     this.readProgress.set(0);
     this.lesson.set(lesson);
     this.progress.setLastOpened(meta.slug);
-    this.title.setTitle(`${meta.title} · Angular Learn`);
+    this.title.setTitle(`${meta.title} · ${COURSE.name}`);
     this.loading.set(false);
   }
 

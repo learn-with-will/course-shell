@@ -1,37 +1,27 @@
-/** What kind of thing a bite teaches. Exactly one per lesson. */
-export type LessonKind = 'concept' | 'api' | 'technique' | 'pattern' | 'pitfall' | 'tool';
+import { COURSE, CourseKind, KindTone } from '../course/course';
 
-export const KINDS: LessonKind[] = ['concept', 'api', 'technique', 'pattern', 'pitfall', 'tool'];
+/** What kind of thing a bite teaches: one of the ids in course.json `kinds`. Exactly one per lesson. */
+export type LessonKind = string;
 
-export const KIND_LABELS: Record<LessonKind, string> = {
-  concept: 'Concept',
-  api: 'API',
-  technique: 'Technique',
-  pattern: 'Pattern',
-  pitfall: 'Pitfall',
-  tool: 'Tool',
+const byKind = <T>(pick: (kind: CourseKind) => T): Record<LessonKind, T> =>
+  Object.fromEntries(COURSE.kinds.map((k) => [k.id, pick(k)]));
+
+/** Chip utility per tone; defined in styles.css. Written out in full so Tailwind finds them. */
+const TONE_CHIPS: Record<KindTone, string> = {
+  violet: 'chip-violet',
+  blue: 'chip-blue',
+  emerald: 'chip-emerald',
+  cyan: 'chip-cyan',
+  orange: 'chip-orange',
+  neutral: 'chip-neutral',
 };
 
-export const KIND_HINTS: Record<LessonKind, string> = {
-  concept: 'How and why something works',
-  api: 'A specific function, decorator or syntax',
-  technique: 'How to get a particular job done',
-  pattern: 'A reusable way to structure code',
-  pitfall: 'A common mistake and its fix',
-  tool: 'CLI and tooling',
-};
+export const KINDS: LessonKind[] = COURSE.kinds.map((k) => k.id);
+export const KIND_LABELS = byKind((k) => k.label);
+export const KIND_HINTS = byKind((k) => k.hint);
+export const KIND_CHIPS = byKind((k) => TONE_CHIPS[k.tone]);
 
-/** Chip utility class per kind; defined in styles.css. */
-export const KIND_CHIPS: Record<LessonKind, string> = {
-  concept: 'kind-concept',
-  api: 'kind-api',
-  technique: 'kind-technique',
-  pattern: 'kind-pattern',
-  pitfall: 'kind-pitfall',
-  tool: 'kind-tool',
-};
-
-/** One of the ~14 topics a lesson belongs to. `count` is filled in by the manifest script. */
+/** One of the topics a lesson belongs to. `count` is filled in by the manifest script. */
 export interface Topic {
   id: string;
   title: string;
@@ -50,7 +40,7 @@ export interface LessonMeta {
   tags: string[];
   /** 2–4 slugs of related bites, shown at the end of the lesson. */
   related: string[];
-  /** First stable Angular version, when it matters. */
+  /** First stable version of the subject that has it, when it matters. */
   since?: string;
   /** Reading time in minutes, computed from the body by the manifest script. */
   minutes: number;

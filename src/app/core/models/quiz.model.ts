@@ -61,7 +61,7 @@ export type QuizQuestion =
   | OrderingQuestion
   | MatchPairQuestion;
 
-/** A question in public/quiz/questions.json: any question type, tagged with its topic. */
+/** A question in the course's quiz/questions.json: any question type, tagged with its topic. */
 export type BankQuestion = QuizQuestion & {
   topic: string;
   /** Slug of the lesson to link to as "Learn more". */

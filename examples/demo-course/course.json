@@ -1,0 +1,32 @@
+{
+  "$schema": "../../course.schema.json",
+  "id": "demo-course",
+  "name": "Bites Demo",
+  "subject": "the course shell",
+  "description": "A tiny course about writing courses for the shared course shell. Copy this folder to start your own.",
+  "brand": {
+    "color": "#0D9488"
+  },
+  "home": {
+    "badge": "Starter course: copy this folder",
+    "headline": ["Write a course in ", "five‑minute bites", "."],
+    "searchExamples": ["course.json", "diagram", "deploy"],
+    "featuredLesson": "course-json",
+    "featuredCode": {
+      "lang": "json",
+      "code": "{\n  \"id\": \"my-course\",\n  \"name\": \"My Course Learn\",\n  \"brand\": { \"color\": \"#0D9488\" }\n}"
+    },
+    "quizPreview": {
+      "topic": "Authoring",
+      "prompt": "Which section of a bite holds exactly three takeaways?",
+      "options": ["The idea", "Remember", "Watch out"],
+      "selected": 1
+    }
+  },
+  "kinds": [
+    { "id": "concept", "label": "Concept", "hint": "How the pieces fit together", "tone": "violet" },
+    { "id": "how-to", "label": "How-to", "hint": "Steps to get a job done", "tone": "emerald" },
+    { "id": "reference", "label": "Reference", "hint": "Fields and rules to look up", "tone": "blue" }
+  ],
+  "codeLanguages": ["json", "markdown", "yaml", "bash"]
+}

@@ -1,47 +1,82 @@
-# Angular Learning Portal
+# Course shell
 
-A **frontend-only** Angular course made of short lessons ("bites"). Each bite teaches one
-idea in **3–5 minutes**, so you can read in any order, jump to a random one, or follow a
-topic from start to finish. Quizzes, progress and bookmarks live in the browser, so you can
-learn without an account. Signing in is optional: once Firebase is configured, learners can sign
-in to keep their progress across devices (see [FIREBASE_SETUP.md](FIREBASE_SETUP.md)).
+The one user interface behind every [learn-with-will](https://learn-with-will.github.io/)
+course. A course is a folder of content plus a small `course.json`; this repository turns that
+folder into a site: a home page, lessons A–Z with search and filters, a lesson reader with code
+highlighting and diagrams, a quiz bank, a progress dashboard, bookmarks, light and dark themes,
+and optional sign-in that keeps progress across devices.
 
-Built with Angular 20+ standalone components, signals, Tailwind CSS v4 and ngx-markdown.
+The shell contains no course of its own. Names, colours, home page copy, lesson kinds and code
+languages all come from the course being built.
 
-## What is in it
+Built with Angular 20 (standalone components, signals), Tailwind CSS v4 and ngx-markdown.
 
-- **Home** with a continue-learning card, topic overview and a "surprise me" button.
-- **Lessons A–Z** with search, filters by topic and kind, and random browsing. There are no
-  levels: every lesson stands on its own and links to related ones.
-- **Lesson reader** with Markdown, syntax highlighting, tables, warning and takeaway cards,
-  and optional diagrams (sequence, tree, flow) drawn by the app itself.
-- **Quiz bank** with questions grouped by topic, in five types: single-choice,
-  multiple-choice, fill-blank, ordering and match-pair, with explanations and review.
-- **Dashboard** and **bookmarks**, with light and dark themes.
-- Old long-lesson URLs (`/lesson/<old-slug>`, `/roadmap`, `/search`) redirect to the new
-  structure, and v1 progress is imported on first load.
+## How it fits together
 
-The course currently has 14 topics, 212 lessons and 313 questions.
-
-## Run it
-
-```bash
-npm install
-npm start          # dev server at http://localhost:4200
-npm run build      # production build into dist/
-npm test           # unit tests
-npm run validate   # check lessons, quiz bank and manifest
-npm run emulators  # optional: local Firebase Auth + Firestore (see FIREBASE_SETUP.md)
+```text
+learn-with-will/course-shell        this repository: the UI, the scripts, the deploy workflow
+learn-with-will/<course>            one repository per course, content only
+  course.json                       name, brand, home page copy, kinds, code languages
+  content/topics.json               the topics, in display order
+  content/lessons/*.md              one short lesson ("bite") per file
+  content/legacy.json               optional: old lesson URLs → the bites that replaced them
+  quiz/questions.json               the question bank
+  assets/                           optional: favicon and logo
+  .github/workflows/deploy.yml      calls this repository's reusable workflow
 ```
 
-`npm start` and `npm run build` regenerate `public/content/course-manifest.json` first.
-Node 22.18 or later is required, because the scripts import TypeScript directly.
+Each course is published at `https://learn-with-will.github.io/<course>/`. Its workflow checks
+out this repository at `main`, so a course picks up a shell change on its next deploy (a push,
+or a manual run of its workflow).
+
+[`examples/demo-course`](examples/demo-course) is a complete tiny course about writing courses.
+It is the default input for every command, the fixture for the tests, and the folder to copy
+when starting a new course.
+
+## Commands
+
+Keep the shell next to the course folders and pass a course folder as the first argument. With
+no argument the demo course is used. Node 22.18 or later is required, because the scripts
+import TypeScript directly.
+
+```bash
+npm ci
+npm run dev -- ../angular                  # live preview at http://localhost:4200
+npm run validate -- ../angular             # check the course; unfinished topics are warnings
+npm run validate -- ../angular --strict    # the release rules the deploy workflow uses
+npm run build -- ../angular                # production build into dist/course-shell/browser
+npm test                                   # unit tests, against the demo course
+```
+
+Options after the course folder go to the Angular CLI, for example
+`npm run dev -- ../angular --port 4300` or
+`npm run build -- ../angular --base-href /angular/`. On Windows, run a build with `--base-href`
+from PowerShell: Git Bash rewrites the leading slash into a file path.
+
+`dev` watches the course folder, so saving a lesson reloads the page.
+
+## What a build does
+
+`scripts/course.mjs` runs `scripts/prepare-course.mjs` and then the Angular CLI. The prepare
+step checks `course.json` and writes these generated, gitignored files:
+
+| File | Contents |
+|---|---|
+| `.course/public/` | The course's `content/`, `quiz/`, favicon and logo, plus `content/course-manifest.json` (the lesson index, with reading times) |
+| `.course/index.html` | The page shell with the course's title and description, from `src/index.template.html` |
+| `.course/prism-languages.js` | Syntax highlighting for the course's `codeLanguages` |
+| `src/generated/course.ts` | The typed `COURSE` constant the app reads |
+| `src/generated/theme.css` | Brand colour scale, gradients and glow |
+
+After a fresh clone, run any command once (for example `npm run prepare-course`) so that
+`src/generated/` exists and the editor can resolve its imports.
 
 ## Project structure
 
 ```text
 src/app/
 ├── core/
+│   ├── course/        # CourseConfig and the COURSE constant (from src/generated)
 │   ├── guards/        # legacy URL and random-lesson redirects
 │   ├── firebase/      # optional sign-in: config and lazy SDK loader
 │   ├── models/        # Lesson, Quiz, Progress interfaces
@@ -54,35 +89,32 @@ src/app/
 ├── features/          # home, lessons, lesson, quiz-hub, quiz-play, dashboard, bookmarks
 └── app.routes.ts      # lazy-loaded routes
 
-public/
-├── content/
-│   ├── lessons/             # one <slug>.md per lesson
-│   ├── topics.json          # the 14 topics
-│   ├── legacy.json          # old lesson id → new lessons, for redirects and imported progress
-│   └── course-manifest.json # generated; do not edit
-└── quiz/questions.json      # the question bank
-
 scripts/
-├── generate-manifest.mjs    # builds the manifest and computes reading time
-└── validate-course.mjs      # the release gate (--strict is used in CI)
+├── course.mjs             # the CLI: dev, build, test, validate, prepare
+├── course-config.mjs      # reads and checks course.json, fills in defaults
+├── prepare-course.mjs     # writes the generated files
+├── generate-manifest.mjs  # lesson index and reading time
+└── validate-course.mjs    # the release gate
+
+.github/workflows/
+├── deploy-course.yml      # reusable workflow that course repositories call
+└── ci.yml                 # validates, tests and builds the demo course
 ```
 
-## Adding a lesson
+## Rules for changing the shell
 
-1. Create `public/content/lessons/<slug>.md` with front-matter (`slug`, `title`, `topic`,
-   `kind`, `summary`, `tags`, `related`) and the five standard sections.
-2. Add questions for it to `public/quiz/questions.json` with `"topic"` and `"lesson"`.
-3. Run `npm run manifest && npm run validate`.
+- **No course-specific text, colour or logic.** If something differs between courses, it is a
+  field in `course.json`: add it to `scripts/course-config.mjs` (check and default),
+  `src/app/core/course/course.model.ts`, `course.schema.json` and the demo course.
+- **`main` must always build.** Courses deploy against `main` without pinning a version. CI
+  validates, tests and builds the demo course on every push.
+- **Storage keys come from the course id** (`<id>-learning-progress-v2`, `<id>-learning-theme`).
+  All courses share one origin, so a fixed key would mix their progress.
 
-[CONTENT_GUIDE.md](CONTENT_GUIDE.md) has the rules: length limits, which visual fits which kind
-of information, and the diagram syntax. The validator enforces them, so a lesson that is too
-long, too short or missing a visual fails the build.
+## Guides
 
-## Deployment
-
-Pushing to `main` runs `.github/workflows/deploy.yml`, which validates the course in strict
-mode, builds with the repository name as the base href, and publishes to GitHub Pages.
-
-## Earlier version
-
-The original 35 long lessons are preserved at the git tag `v1-long-lessons`.
+- [CONTENT_GUIDE.md](CONTENT_GUIDE.md): how to write a lesson, the visuals, the diagram syntax,
+  quiz questions, and every `course.json` field.
+- [MIGRATING_A_COURSE.md](MIGRATING_A_COURSE.md): moving a course from the old long-lesson
+  shells onto this one, and starting a new course.
+- [FIREBASE_SETUP.md](FIREBASE_SETUP.md): the optional sign-in and progress sync.

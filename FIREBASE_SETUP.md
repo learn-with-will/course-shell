@@ -28,7 +28,7 @@ Firebase code downloaded, nothing changes.
 | Security rules | `firestore.rules` |
 
 **Data model.** One document per learner per course: `users/{uid}/progress/{COURSE_ID}`
-(`COURSE_ID` is `angular`). It holds the same shape as the local progress: `learned`,
+(`COURSE_ID` is the `id` in the course's `course.json`, for example `angular`). It holds the same shape as the local progress: `learned`,
 `bookmarks`, `lastOpened`, `questions`, `sessions`, `legacyImported`, plus `version` and
 `updatedAt`.
 
@@ -82,7 +82,7 @@ project. They need Java 21 or newer.
 npm run emulators      # Auth on :9099, Firestore on :8080
 ```
 
-Then set `USE_EMULATORS = true` in `firebase.config.ts` and run `npm start`. The sign-in pop-up
+Then set `USE_EMULATORS = true` in `firebase.config.ts` and run `npm run dev -- <course folder>`. The sign-in pop-up
 becomes a local page where you choose **Add new account** and sign in as a made-up user. Set the
 flag back to `false` before you commit.
 
@@ -91,14 +91,15 @@ flag back to `false` before you commit.
 The portal home page (`https://learn-with-will.github.io/`) and every course
 (`https://learn-with-will.github.io/<course>/`) are served from the **same origin**, and Firebase
 keeps the sign-in session in that origin's browser storage. So signing in on the portal also signs
-you in to the Angular course, and the other way round; signing out in one place signs out of both.
+you in to every course built with this shell, and the other way round; signing out in one place
+signs out everywhere.
 The portal's sign-in lives in `index.html` (the "OPTIONAL SIGN-IN" script) and loads only
 Firebase Authentication, from Google's CDN, because it needs to know who you are, not to store
 progress.
 
 For the session to be shared, every page that offers sign-in must agree on these three things:
 
-| Must match | Angular course | Portal `index.html` |
+| Must match | Course shell | Portal `index.html` |
 | --- | --- | --- |
 | Firebase project settings (at least `apiKey`; paste the console snippet unchanged into both) | `FIREBASE_CONFIG` in `firebase.config.ts` | `FIREBASE_CONFIG` in the sign-in script |
 | Session hint key, `learn-with-will:signed-in` | `auth.service.ts` | `HINT_KEY` |
@@ -109,9 +110,9 @@ the real site: `localhost:4200` and `localhost:<other port>` are different origi
 portal and a course do not share a session.
 
 Each course writes its own `users/{uid}/progress/{courseId}` document, and the rules already allow
-any `courseId`. The Angular files can be copied to another Angular course by changing
-`COURSE_ID`. The React and Vue courses need the three service files ported to their framework, but
-`progress-sync.ts` is framework-free and the Firestore data model and rules are shared as they are.
+any `courseId`. Sign-in is part of the shell, so every course built with it has the feature with
+no setup of its own: the document is named after the `id` in its `course.json`. Courses still on
+the old React or Vue shells do not have it until they move to this shell.
 
 ## Good to know
 

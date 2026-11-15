@@ -1,17 +1,15 @@
 {
-  "name": "learning-portal",
+  "name": "course-shell",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "prestart": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/generate-manifest.mjs",
-    "build": "ng build",
-    "prebuild": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/generate-manifest.mjs",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "manifest": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/generate-manifest.mjs",
-    "validate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/validate-course.mjs",
-    "emulators": "npx --yes firebase-tools@latest emulators:start --only auth,firestore --project demo-angular-learn"
+    "dev": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/course.mjs dev",
+    "start": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/course.mjs dev",
+    "build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/course.mjs build",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/course.mjs test",
+    "validate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/course.mjs validate",
+    "prepare-course": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/course.mjs prepare",
+    "emulators": "npx --yes firebase-tools@latest emulators:start --only auth,firestore --project demo-course-shell"
   },
   "prettier": {
     "printWidth": 100,

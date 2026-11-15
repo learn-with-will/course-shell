@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { COURSE } from '../../../core/course/course';
 import { BrandMark } from '../brand-mark/brand-mark';
 
 @Component({
@@ -12,7 +13,7 @@ import { BrandMark } from '../brand-mark/brand-mark';
       >
         <a routerLink="/" class="flex items-center gap-2.5 rounded-lg font-semibold text-ink-900 dark:text-white">
           <app-brand-mark class="h-5.5 w-5.5" />
-          Angular Learn
+          {{ siteName }}
         </a>
         <p>One idea per lesson. Free and open, no account needed.</p>
         <nav aria-label="Footer" class="flex gap-5">
@@ -24,4 +25,6 @@ import { BrandMark } from '../brand-mark/brand-mark';
     </footer>
   `,
 })
-export class Footer {}
+export class Footer {
+  protected readonly siteName = COURSE.name;
+}
