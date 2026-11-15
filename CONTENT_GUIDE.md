@@ -161,7 +161,7 @@ autocomplete: add `"$schema": "https://raw.githubusercontent.com/learn-with-will
 | `brand.color` | yes | The brand colour, `"#rrggbb"`. The shades, gradient, logo and favicon are derived from it |
 | `brand.scale` | no | Exact shades `50`–`950` (600 is the main colour), when the derived ones are not right |
 | `brand.gradient`, `brand.gradientDark` | no | Three stops for the logo and the highlighted headline words |
-| `brand.logo`, `brand.favicon` | no | Paths in the course folder (`assets/logo.svg`). Default: the bite mark in the gradient |
+| `brand.logo`, `brand.favicon` | no | Leave out so that every course shares one logo, the bite mark, in its brand gradient. Only set them for a deliberate exception (paths in the course folder, such as `assets/logo.svg`) |
 | `home.badge` | no | A short announcement above the headline |
 | `home.headline` | no | Three parts: text before, the highlighted words, text after |
 | `home.searchExamples` | no | Up to three words suggested in the search box |

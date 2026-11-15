@@ -70,7 +70,7 @@ field, where the values come from in the old course:
 | `brand.color` | `--color-brand-600` in the old `src/index.css`. The new shell puts white text on this colour, so use the 600 shade, not the lighter 500 |
 | `brand.scale` | Optional: copy the old `--color-brand-50` … `--color-brand-950` values for exact colours |
 | `brand.gradient` | Optional: three stops, from the brand colour toward the old accent colour |
-| `brand.logo`, `brand.favicon` | The old `public/favicon.svg`, copied to `assets/`. A monochrome `currentColor` icon needs a fixed `fill` to show as an image. Leave both out to get the bite mark in the brand gradient |
+| `brand.logo`, `brand.favicon` | Leave both out. Every course uses the same logo, the bite mark, drawn in its brand gradient; only the colour differs. Do not copy the old `public/favicon.svg` |
 | `home.*` | Write a headline, three search words learners would type, the slug of a strong first bite, a code sample of at most 8 lines, and one quiz question for the preview |
 | `kinds` | Leave out for the default six, or list your own |
 | `codeLanguages` | The Prism languages the old `src/core/prism.ts` imported |
