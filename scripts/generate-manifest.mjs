@@ -185,8 +185,49 @@ export function readLessonFiles(paths) {
 
 /** `paths` comes from coursePaths(courseDir). */
 export function buildManifest(paths) {
-  const lessons = readLessonFiles(paths)
-    .filter((l) => !l.error)
+  const course = readJson(paths.config, {});
+  const isGuided = course.format === 'guided';
+
+  const lessonFiles = readLessonFiles(paths).filter((l) => !l.error);
+  const counts = new Map();
+  for (const l of lessonFiles) counts.set(l.meta.topic, (counts.get(l.meta.topic) ?? 0) + 1);
+
+  const rawTopics = readJson(paths.topics, []);
+  let topics;
+  const numberMap = new Map();
+  const path = [];
+
+  if (isGuided) {
+    const trackIndex = new Map((course.tracks ?? []).map((t, i) => [t.id, i]));
+    topics = [...rawTopics].sort((a, b) => {
+      const ta = trackIndex.get(a.track) ?? 999;
+      const tb = trackIndex.get(b.track) ?? 999;
+      if (ta !== tb) return ta - tb;
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+
+    const existingSlugs = new Set(lessonFiles.map((l) => l.meta.slug));
+    for (let i = 0; i < topics.length; i++) {
+      const topic = topics[i];
+      const chapterNumber = i + 1;
+      topic.number = chapterNumber;
+      topic.count = counts.get(topic.id) ?? 0;
+      const lessonSlugs = Array.isArray(topic.lessons) ? topic.lessons : [];
+      for (let j = 0; j < lessonSlugs.length; j++) {
+        const slug = lessonSlugs[j];
+        numberMap.set(slug, `${chapterNumber}.${j + 1}`);
+        if (existingSlugs.has(slug)) {
+          path.push(slug);
+        }
+      }
+    }
+  } else {
+    topics = rawTopics
+      .map((t) => ({ ...t, count: counts.get(t.id) ?? 0 }))
+      .sort((a, b) => a.order - b.order);
+  }
+
+  const lessons = lessonFiles
     .map(({ file, meta, stats }) => {
       const entry = {
         slug: meta.slug,
@@ -200,22 +241,34 @@ export function buildManifest(paths) {
         file: `lessons/${file}`,
       };
       if (meta.since) entry.since = String(meta.since);
+      if (isGuided) {
+        entry.number = numberMap.get(meta.slug) ?? '';
+        entry.goal = meta.goal ?? '';
+        entry.requires = Array.isArray(meta.requires) ? meta.requires : [];
+        entry.api = Array.isArray(meta.api) ? meta.api : [];
+        entry.aliases = Array.isArray(meta.aliases) ? meta.aliases : [];
+      }
       return entry;
     })
     .sort((a, b) => a.slug.localeCompare(b.slug));
 
-  const counts = new Map();
-  for (const l of lessons) counts.set(l.topic, (counts.get(l.topic) ?? 0) + 1);
   const topicByLesson = new Map(lessons.map((l) => [l.slug, l.topic]));
-
-  const topics = readJson(paths.topics)
-    .map((t) => ({ ...t, count: counts.get(t.id) ?? 0 }))
-    .sort((a, b) => a.order - b.order);
 
   const legacy = readJson(paths.legacy, []).map((entry) => {
     const topic = topicByLesson.get(entry.lessons[0]);
     return topic ? { ...entry, topic } : entry;
   });
+
+  if (isGuided) {
+    return {
+      format: 'guided',
+      tracks: course.tracks ?? [],
+      topics,
+      lessons,
+      legacy,
+      path,
+    };
+  }
 
   return { topics, lessons, legacy };
 }
