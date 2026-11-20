@@ -115,6 +115,8 @@ export function prepareCourse(courseDir) {
   // ---- src/generated -------------------------------------------------------
   const appConfig = {
     id: course.id,
+    format: course.format,
+    tracks: course.tracks,
     name: course.name,
     subject: course.subject,
     description: course.description,

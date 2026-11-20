@@ -20,6 +20,8 @@ export const DEMO_COURSE = resolve(shellRoot, 'examples', 'demo-course');
 export const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 const SCALE_STEPS = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'];
+export const TRACK_LEVELS = ['beginner', 'intermediate', 'advanced'];
+export const REQUIRED_GUIDED_KINDS = ['concept', 'task', 'build', 'troubleshoot'];
 
 /** Chip colours a lesson kind can take; each has a `chip-<tone>` utility in styles.css. */
 export const TONES = ['violet', 'blue', 'emerald', 'cyan', 'orange', 'neutral'];
@@ -32,6 +34,13 @@ export const DEFAULT_KINDS = [
   { id: 'pattern', label: 'Pattern', hint: 'A reusable way to structure code', tone: 'cyan' },
   { id: 'pitfall', label: 'Pitfall', hint: 'A common mistake and its fix', tone: 'orange' },
   { id: 'tool', label: 'Tool', hint: 'CLI and tooling', tone: 'neutral' },
+];
+
+export const DEFAULT_GUIDED_KINDS = [
+  { id: 'concept', label: 'Concept', hint: 'What something is and why it exists', tone: 'violet' },
+  { id: 'task', label: 'How-to', hint: 'Steps to get one job done', tone: 'emerald' },
+  { id: 'build', label: 'Build it', hint: 'Put a chapter together in a small project', tone: 'orange' },
+  { id: 'troubleshoot', label: 'Fix it', hint: 'A symptom, its cause and the fix', tone: 'blue' },
 ];
 
 /** Fence names that need no Prism component: they are shown as plain text. */
@@ -154,6 +163,36 @@ export function checkCourseJson(raw, dir) {
   if (!isText(raw.id) || !SLUG_RE.test(raw.id)) bad('id: required, kebab-case, the same as the repository name');
   for (const key of ['name', 'subject', 'description']) if (!isText(raw[key])) bad(`${key}: required text`);
 
+  if (raw.format !== undefined && raw.format !== 'bites' && raw.format !== 'guided') {
+    bad('format: must be "bites" or "guided"');
+  }
+
+  if (raw.format === 'guided') {
+    if (!Array.isArray(raw.tracks) || raw.tracks.length === 0) {
+      bad('tracks: required when format is guided');
+    } else {
+      const trackIds = new Set();
+      for (const t of raw.tracks) {
+        const where = `tracks "${t?.id ?? '?'}"`;
+        if (!isText(t?.id) || !SLUG_RE.test(t.id)) bad(`${where}: id must be kebab-case`);
+        if (trackIds.has(t?.id)) bad(`${where}: duplicate id`);
+        trackIds.add(t?.id);
+        if (!isText(t?.title)) bad(`${where}: missing title`);
+        if (!isText(t?.blurb) || t.blurb.length > 160) bad(`${where}: blurb must be text <= 160 characters`);
+        if (!TRACK_LEVELS.includes(t?.level)) bad(`${where}: level must be beginner, intermediate, or advanced`);
+      }
+    }
+
+    if (raw.kinds === undefined || !Array.isArray(raw.kinds) || raw.kinds.length === 0) {
+      bad('kinds: required when format is guided');
+    } else {
+      const ids = new Set(raw.kinds.map((k) => k?.id));
+      if (ids.size !== 4 || !REQUIRED_GUIDED_KINDS.every((id) => ids.has(id))) {
+        bad('kinds: guided format requires exactly 4 kinds: concept, task, build, troubleshoot');
+      }
+    }
+  }
+
   const brand = raw.brand;
   if (!brand || typeof brand !== 'object') {
     bad('brand: required object with at least "color"');
@@ -235,12 +274,18 @@ export function checkCourseJson(raw, dir) {
 
 /** course.json with every optional part filled in. Call after `checkCourseJson` passes. */
 export function normalizeCourse(raw) {
+  const isGuided = raw.format === 'guided';
   const scale = raw.brand.scale
     ? Object.fromEntries(SCALE_STEPS.map((s) => [s, raw.brand.scale[s].toLowerCase()]))
     : scaleFrom(raw.brand.color);
   const home = raw.home ?? {};
+  const defaultHeadline = isGuided
+    ? [`Learn ${raw.subject} `, 'step by step', ', one short lesson at a time.']
+    : [`Learn ${raw.subject} one `, 'five‑minute bite', ' at a time.'];
   return {
     id: raw.id,
+    format: raw.format ?? 'bites',
+    tracks: raw.tracks ?? [],
     name: raw.name,
     subject: raw.subject,
     description: raw.description,
@@ -253,13 +298,13 @@ export function normalizeCourse(raw) {
     },
     home: {
       badge: home.badge ?? null,
-      headline: home.headline ?? [`Learn ${raw.subject} one `, 'five‑minute bite', ' at a time.'],
+      headline: home.headline ?? defaultHeadline,
       searchExamples: home.searchExamples ?? [],
       featuredLesson: home.featuredLesson ?? null,
       featuredCode: home.featuredCode ?? null,
       quizPreview: home.quizPreview ?? null,
     },
-    kinds: raw.kinds ?? DEFAULT_KINDS,
+    kinds: raw.kinds ?? (isGuided ? DEFAULT_GUIDED_KINDS : DEFAULT_KINDS),
     codeLanguages: raw.codeLanguages ?? [],
   };
 }

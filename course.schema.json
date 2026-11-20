@@ -22,6 +22,26 @@
       "$ref": "#/definitions/slug",
       "description": "The repository name. It names the saved progress (browser storage keys and the learner's cloud document), so never change it once the course is live."
     },
+    "format": {
+      "type": "string",
+      "enum": ["bites", "guided"],
+      "description": "Course format: \"bites\" (default) or \"guided\"."
+    },
+    "tracks": {
+      "type": "array",
+      "description": "Tracks in order for guided format.",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "blurb", "level"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "#/definitions/slug" },
+          "title": { "type": "string", "minLength": 1 },
+          "blurb": { "type": "string", "maxLength": 160 },
+          "level": { "enum": ["beginner", "intermediate", "advanced"] }
+        }
+      }
+    },
     "name": { "type": "string", "minLength": 1, "description": "The site name, e.g. \"Angular Learn\"." },
     "subject": {
       "type": "string",

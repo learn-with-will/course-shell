@@ -1,6 +1,16 @@
 /** Chip colour of a lesson kind; each tone has a `chip-<tone>` utility in styles.css. */
 export type KindTone = 'violet' | 'blue' | 'emerald' | 'cyan' | 'orange' | 'neutral';
 
+export type CourseFormat = 'bites' | 'guided';
+export type TrackLevel = 'beginner' | 'intermediate' | 'advanced';
+
+export interface CourseTrack {
+  id: string;
+  title: string;
+  blurb: string;
+  level: TrackLevel;
+}
+
 /** One of the kinds a lesson can be, as listed in course.json `kinds`. */
 export interface CourseKind {
   id: string;
@@ -33,6 +43,8 @@ export interface QuizPreview {
 export interface CourseConfig {
   /** The repository name. Names the storage keys and the learner's progress document. */
   id: string;
+  format: CourseFormat;
+  tracks: CourseTrack[];
   /** Site name, e.g. "Angular Learn". */
   name: string;
   /** What is being taught, e.g. "Angular". Used inside sentences. */
