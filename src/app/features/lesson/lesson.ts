@@ -21,7 +21,7 @@ import { CourseService } from '../../core/services/course.service';
 import { LessonService } from '../../core/services/lesson.service';
 import { ProgressService } from '../../core/services/progress.service';
 import { COURSE } from '../../core/course/course';
-import { KIND_CHIPS, KIND_LABELS, Lesson } from '../../core/models/lesson.model';
+import { KIND_CHIPS, KIND_LABELS, Lesson, LessonMeta } from '../../core/models/lesson.model';
 import { RelatedLessons } from '../../shared/components/related-lessons/related-lessons';
 import { Diagram } from '../../shared/diagram/diagram';
 import { DiagramSpec, isDiagramKind, parseDiagram } from '../../shared/diagram/diagram-parser';
@@ -52,7 +52,9 @@ const CALLOUTS: Record<string, string> = {
 /** Section headings whose bullet list is drawn as a stack of cards, and how. */
 const LIST_SECTIONS: Record<string, string[]> = {
   'watch out': ['dg-list', 'dg-list-warn', 'dg-tone-amber'],
+  'common mistakes': ['dg-list', 'dg-list-warn', 'dg-tone-amber'],
   remember: ['dg-list', 'dg-list-remember', 'dg-tone-blue'],
+  recap: ['dg-list', 'dg-list-remember', 'dg-tone-blue'],
 };
 
 @Component({
@@ -122,6 +124,41 @@ export class LessonPage {
   protected readonly next = computed(() => {
     const i = this.position();
     return i >= 0 ? this.topicLessons()[i + 1] : undefined;
+  });
+
+  protected readonly currentTopic = computed(() => {
+    const l = this.lesson();
+    return l ? this.course.getTopic(l.meta.topic) : undefined;
+  });
+
+  protected readonly requiresLessons = computed(() => {
+    const l = this.lesson();
+    if (!l?.meta.requires?.length) return [];
+    return l.meta.requires
+      .map((s) => this.course.getBySlug(s))
+      .filter((item): item is LessonMeta => !!item);
+  });
+
+  protected readonly guidedPrev = computed(() => {
+    const slug = this.lesson()?.meta.slug;
+    return slug ? this.course.prevInPath(slug) : undefined;
+  });
+
+  protected readonly guidedNext = computed(() => {
+    const slug = this.lesson()?.meta.slug;
+    return slug ? this.course.nextInPath(slug) : undefined;
+  });
+
+  protected readonly isNewChapter = computed(() => {
+    const current = this.lesson()?.meta;
+    const next = this.guidedNext();
+    if (!current || !next) return false;
+    return next.topic !== current.topic;
+  });
+
+  protected readonly nextTopic = computed(() => {
+    const next = this.guidedNext();
+    return next ? this.course.getTopic(next.topic) : undefined;
   });
 
   /** The lesson's sections, read from its rendered h2s, for "On this page". */
@@ -287,7 +324,11 @@ export class LessonPage {
       if (lead?.tagName !== 'STRONG') return;
       const label = (lead.textContent ?? '').replace(/[:.]\s*$/, '').trim().toLowerCase();
       const cls = CALLOUTS[label];
-      if (cls) quote.classList.add('callout', cls);
+      if (cls) {
+        quote.classList.add('callout', cls);
+      } else {
+        quote.classList.add('callout', 'dg-tone-blue');
+      }
     });
   }
 
