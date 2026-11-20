@@ -15,6 +15,10 @@ export const legacyLessonGuard: CanActivateFn = async (route) => {
 
   const slug = route.paramMap.get('slug') ?? '';
   if (course.getBySlug(slug)) return true;
+  const target = course.getByAlias(slug);
+  if (target) {
+    return router.createUrlTree(['/lesson', target.slug]);
+  }
   if (course.legacyBySlug(slug)) {
     return router.createUrlTree(['/lessons'], { queryParams: { from: slug } });
   }
