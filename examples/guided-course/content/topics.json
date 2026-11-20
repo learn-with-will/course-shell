@@ -1,0 +1,18 @@
+[
+  {
+    "id": "getting-started",
+    "title": "Getting started with guided format",
+    "blurb": "Understand what guided format is and write your first lesson.",
+    "order": 1,
+    "track": "foundations",
+    "lessons": ["what-is-guided", "write-a-task", "build-first-chapter"]
+  },
+  {
+    "id": "polishing-lessons",
+    "title": "Polishing your course",
+    "blurb": "Deepen content and troubleshoot mistakes.",
+    "order": 2,
+    "track": "advanced-craft",
+    "lessons": ["going-deeper", "why-tests-fail"]
+  }
+]

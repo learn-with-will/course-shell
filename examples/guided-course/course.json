@@ -1,0 +1,32 @@
+{
+  "$schema": "../../course.schema.json",
+  "id": "guided-course",
+  "format": "guided",
+  "name": "Guided Course Demo",
+  "subject": "guided courses",
+  "description": "A sample course teaching how to write guided courses for the shared course shell.",
+  "brand": {
+    "color": "#0284C7"
+  },
+  "tracks": [
+    {
+      "id": "foundations",
+      "title": "Foundations",
+      "blurb": "Learn the basics of guided lessons.",
+      "level": "beginner"
+    },
+    {
+      "id": "advanced-craft",
+      "title": "Advanced craft",
+      "blurb": "Deeper skills and troubleshooting.",
+      "level": "advanced"
+    }
+  ],
+  "kinds": [
+    { "id": "concept", "label": "Concept", "hint": "What something is and why it exists", "tone": "violet" },
+    { "id": "task", "label": "How-to", "hint": "Steps to get one job done", "tone": "emerald" },
+    { "id": "build", "label": "Build it", "hint": "Put a chapter together in a small project", "tone": "orange" },
+    { "id": "troubleshoot", "label": "Fix it", "hint": "A symptom, its cause and the fix", "tone": "blue" }
+  ],
+  "codeLanguages": ["markdown", "json", "bash"]
+}

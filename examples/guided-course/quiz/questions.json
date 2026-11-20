@@ -1,0 +1,228 @@
+[
+  {
+    "id": "gs-01",
+    "topic": "getting-started",
+    "lesson": "what-is-guided",
+    "type": "single-choice",
+    "prompt": "What are the three structural levels of a guided course?",
+    "options": [
+      { "id": "a", "text": "Modules, pages, and snippets" },
+      { "id": "b", "text": "Tracks, chapters, and lessons" },
+      { "id": "c", "text": "Subjects, books, and articles" },
+      { "id": "d", "text": "Levels, topics, and posts" }
+    ],
+    "answer": "b",
+    "explanation": "A guided course groups curriculum into tracks, chapters, and short sequential lessons."
+  },
+  {
+    "id": "gs-02",
+    "topic": "getting-started",
+    "lesson": "what-is-guided",
+    "type": "multiple-choice",
+    "prompt": "Which fields are required in the front-matter of a guided lesson? (Select all that apply.)",
+    "options": [
+      { "id": "a", "text": "slug" },
+      { "id": "b", "text": "goal" },
+      { "id": "c", "text": "title" },
+      { "id": "d", "text": "author" }
+    ],
+    "answer": ["a", "b", "c"],
+    "explanation": "Guided lessons require slug, title, topic, kind, summary, and goal. Author is not a recognized field."
+  },
+  {
+    "id": "gs-03",
+    "topic": "getting-started",
+    "lesson": "write-a-task",
+    "type": "single-choice",
+    "prompt": "How many bullet takeaways must appear in the Recap section?",
+    "options": [
+      { "id": "a", "text": "One" },
+      { "id": "b", "text": "Two" },
+      { "id": "c", "text": "Exactly three" },
+      { "id": "d", "text": "Between three and five" }
+    ],
+    "answer": "c",
+    "explanation": "The Recap section always contains exactly three bullet points summarizing actionable takeaways."
+  },
+  {
+    "id": "gs-04",
+    "topic": "getting-started",
+    "lesson": "write-a-task",
+    "type": "ordering",
+    "prompt": "Put the standard sections of a task lesson in order.",
+    "items": [
+      { "id": "s1", "text": "Why you need it" },
+      { "id": "s2", "text": "Try it" },
+      { "id": "s3", "text": "How it works" },
+      { "id": "s4", "text": "Recap" }
+    ],
+    "answer": ["s1", "s2", "s3", "s4"],
+    "explanation": "Task lessons flow from Why you need it to Try it, How it works, and finally Recap."
+  },
+  {
+    "id": "gs-05",
+    "topic": "getting-started",
+    "lesson": "write-a-task",
+    "type": "match-pair",
+    "prompt": "Match each front-matter field to its purpose.",
+    "pairs": [
+      { "left": "goal", "right": "Actionable capability after lesson" },
+      { "left": "requires", "right": "Prerequisite lesson slugs" },
+      { "left": "api", "right": "Primary function or syntax taught" },
+      { "left": "aliases", "right": "Old slugs redirected to this lesson" }
+    ],
+    "explanation": "Each front-matter property serves a specific contract requirement in the guided format."
+  },
+  {
+    "id": "gs-06",
+    "topic": "getting-started",
+    "lesson": "build-first-chapter",
+    "type": "fill-blank",
+    "prompt": "Which file defines the display order and lesson slug list for all chapters?",
+    "answer": ["topics.json", "content/topics.json"],
+    "explanation": "The content/topics.json file is the single source of truth for chapters and lesson order."
+  },
+  {
+    "id": "gs-07",
+    "topic": "getting-started",
+    "lesson": "build-first-chapter",
+    "type": "single-choice",
+    "prompt": "What is the maximum allowed reading time for a build lesson?",
+    "options": [
+      { "id": "a", "text": "5 minutes" },
+      { "id": "b", "text": "7 minutes" },
+      { "id": "c", "text": "10 minutes" },
+      { "id": "d", "text": "15 minutes" }
+    ],
+    "answer": "c",
+    "explanation": "Build lessons allow up to 10 minutes (and 1500 words) to complete hands-on steps."
+  },
+  {
+    "id": "gs-08",
+    "topic": "getting-started",
+    "lesson": "build-first-chapter",
+    "type": "single-choice",
+    "prompt": "How many steps must a build lesson have in its Steps section?",
+    "options": [
+      { "id": "a", "text": "At least 1" },
+      { "id": "b", "text": "At least 2" },
+      { "id": "c", "text": "Exactly 5" },
+      { "id": "d", "text": "At most 3" }
+    ],
+    "answer": "b",
+    "explanation": "A build lesson must contain at least two steps guiding the learner through construction."
+  },
+  {
+    "id": "pl-01",
+    "topic": "polishing-lessons",
+    "lesson": "going-deeper",
+    "type": "single-choice",
+    "prompt": "In which track level is the \"Going further\" section allowed?",
+    "options": [
+      { "id": "a", "text": "beginner" },
+      { "id": "b", "text": "intermediate" },
+      { "id": "c", "text": "advanced" },
+      { "id": "d", "text": "Any track" }
+    ],
+    "answer": "c",
+    "explanation": "Going further is only permitted in tracks with level set to advanced."
+  },
+  {
+    "id": "pl-02",
+    "topic": "polishing-lessons",
+    "lesson": "going-deeper",
+    "type": "multiple-choice",
+    "prompt": "What makes a good Going further section? (Select all that apply.)",
+    "options": [
+      { "id": "a", "text": "Pointers to language specifications and RFCs" },
+      { "id": "b", "text": "Deep architectural trade-offs and edge cases" },
+      { "id": "c", "text": "Mandatory exercises for beginners" },
+      { "id": "d", "text": "References to compiler internals" }
+    ],
+    "answer": ["a", "b", "d"],
+    "explanation": "Going further provides deep dive context and references without burdening beginners."
+  },
+  {
+    "id": "pl-03",
+    "topic": "polishing-lessons",
+    "lesson": "going-deeper",
+    "type": "single-choice",
+    "prompt": "What is the maximum character length for a lesson title?",
+    "options": [
+      { "id": "a", "text": "40 characters" },
+      { "id": "b", "text": "60 characters" },
+      { "id": "c", "text": "80 characters" },
+      { "id": "d", "text": "100 characters" }
+    ],
+    "answer": "b",
+    "explanation": "Titles must stay concise and cannot exceed 60 characters."
+  },
+  {
+    "id": "pl-04",
+    "topic": "polishing-lessons",
+    "lesson": "why-tests-fail",
+    "type": "ordering",
+    "prompt": "Put the sections of a troubleshoot lesson in order.",
+    "items": [
+      { "id": "t1", "text": "What you see" },
+      { "id": "t2", "text": "Why it happens" },
+      { "id": "t3", "text": "How to fix it" },
+      { "id": "t4", "text": "Recap" }
+    ],
+    "answer": ["t1", "t2", "t3", "t4"],
+    "explanation": "Troubleshoot lessons present the symptom first, explain the cause, provide the fix, and recap."
+  },
+  {
+    "id": "pl-05",
+    "topic": "polishing-lessons",
+    "lesson": "why-tests-fail",
+    "type": "single-choice",
+    "prompt": "Can a lesson title start with \"Pitfall:\" in guided format?",
+    "options": [
+      { "id": "a", "text": "Yes, for any lesson teaching mistakes" },
+      { "id": "b", "text": "No, titles must not begin with Pitfall" },
+      { "id": "c", "text": "Only if kind is troubleshoot" },
+      { "id": "d", "text": "Only in advanced tracks" }
+    ],
+    "answer": "b",
+    "explanation": "The guided format prohibits titles starting with Pitfall; use symptom questions or action verbs."
+  },
+  {
+    "id": "pl-06",
+    "topic": "polishing-lessons",
+    "lesson": "why-tests-fail",
+    "type": "match-pair",
+    "prompt": "Match each lesson kind to its required sections.",
+    "pairs": [
+      { "left": "task", "right": "Why you need it, Try it, How it works, Recap" },
+      { "left": "concept", "right": "Why you need it, How it works, Recap" },
+      { "left": "build", "right": "What you'll build, Steps, Check your work, Recap" },
+      { "left": "troubleshoot", "right": "What you see, Why it happens, How to fix it, Recap" }
+    ],
+    "explanation": "Each kind defines a tailored set of mandatory and optional sections."
+  },
+  {
+    "id": "pl-07",
+    "topic": "polishing-lessons",
+    "lesson": "why-tests-fail",
+    "type": "fill-blank",
+    "prompt": "What CLI flag enables strict release validation rules?",
+    "answer": ["--strict"],
+    "explanation": "Passing --strict turns all pending warnings into release-blocking errors."
+  },
+  {
+    "id": "pl-08",
+    "topic": "polishing-lessons",
+    "lesson": "why-tests-fail",
+    "type": "single-choice",
+    "prompt": "What happens if a quiz question references an alias instead of the current lesson slug?",
+    "options": [
+      { "id": "a", "text": "Validation passes with a warning" },
+      { "id": "b", "text": "The quiz question automatically updates" },
+      { "id": "c", "text": "Validation fails with an error" },
+      { "id": "d", "text": "The quiz question is ignored" }
+    ],
+    "answer": "c",
+    "explanation": "Quiz questions must always point to canonical lesson slugs, never aliases."
+  }
+]
