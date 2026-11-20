@@ -37,6 +37,9 @@ export class CourseService {
 
   readonly loaded = this._loaded.asReadonly();
 
+  readonly isGuided = computed(() => this._manifest().format === 'guided');
+  readonly path = computed<string[]>(() => this._manifest().path ?? []);
+
   /** Topics that have at least one lesson, in display order. */
   readonly topics = computed(() => this._manifest().topics.filter((t) => t.count > 0));
 
@@ -58,6 +61,15 @@ export class CourseService {
   readonly legacyEntries = computed(() => this._manifest().legacy);
 
   private readonly bySlug = computed(() => new Map(this._manifest().lessons.map((l) => [l.slug, l])));
+  private readonly byAlias = computed(() => {
+    const map = new Map<string, LessonMeta>();
+    for (const l of this._manifest().lessons) {
+      for (const a of l.aliases ?? []) {
+        map.set(a, l);
+      }
+    }
+    return map;
+  });
 
   /** Loads the manifest once; later calls share the finished (or in-flight) load. */
   load(): Promise<void> {
@@ -82,11 +94,45 @@ export class CourseService {
     return this.bySlug().get(slug);
   }
 
+  getByAlias(slug: string): LessonMeta | undefined {
+    return this.byAlias().get(slug);
+  }
+
+  nextInPath(slug: string): LessonMeta | undefined {
+    const p = this.path();
+    const idx = p.indexOf(slug);
+    return idx >= 0 && idx < p.length - 1 ? this.getBySlug(p[idx + 1]) : undefined;
+  }
+
+  prevInPath(slug: string): LessonMeta | undefined {
+    const p = this.path();
+    const idx = p.indexOf(slug);
+    return idx > 0 ? this.getBySlug(p[idx - 1]) : undefined;
+  }
+
+  firstUnlearned(learned: ReadonlySet<string>): LessonMeta | undefined {
+    if (this.isGuided()) {
+      for (const slug of this.path()) {
+        if (!learned.has(slug)) return this.getBySlug(slug);
+      }
+      return undefined;
+    }
+    return this.lessons().find((l) => !learned.has(l.slug));
+  }
+
   getTopic(id: string): Topic | undefined {
     return this._manifest().topics.find((t) => t.id === id);
   }
 
   byTopic(topicId: string): LessonMeta[] {
+    if (this.isGuided()) {
+      const topic = this.getTopic(topicId);
+      if (topic?.lessons) {
+        return topic.lessons
+          .map((slug) => this.getBySlug(slug))
+          .filter((l): l is LessonMeta => !!l);
+      }
+    }
     return this.lessons().filter((l) => l.topic === topicId);
   }
 

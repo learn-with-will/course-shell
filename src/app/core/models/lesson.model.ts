@@ -1,4 +1,4 @@
-import { COURSE, CourseKind, KindTone } from '../course/course';
+import { COURSE, CourseKind, CourseTrack, KindTone } from '../course/course';
 
 /** What kind of thing a bite teaches: one of the ids in course.json `kinds`. Exactly one per lesson. */
 export type LessonKind = string;
@@ -28,6 +28,9 @@ export interface Topic {
   blurb: string;
   order: number;
   count: number;
+  track?: string;
+  number?: number;
+  lessons?: string[];
 }
 
 /** A single bite (entry in course-manifest.json). */
@@ -46,6 +49,11 @@ export interface LessonMeta {
   minutes: number;
   /** Path to the markdown file, relative to /content. */
   file: string;
+  number?: string;
+  goal?: string;
+  requires?: string[];
+  api?: string[];
+  aliases?: string[];
 }
 
 /** Maps one of the old long lessons to the bites that replaced it. */
@@ -59,9 +67,12 @@ export interface LegacyEntry {
 }
 
 export interface CourseManifest {
+  format?: 'bites' | 'guided';
+  tracks?: CourseTrack[];
   topics: Topic[];
   lessons: LessonMeta[];
   legacy: LegacyEntry[];
+  path?: string[];
 }
 
 /** A loaded lesson: metadata plus the markdown body (front-matter stripped). */
