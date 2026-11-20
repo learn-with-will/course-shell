@@ -120,4 +120,70 @@ describe('CourseService', () => {
       expect(service.legacyBySlug('not-migrated')?.lessons).toEqual([]);
     });
   });
+
+  describe('guided course', () => {
+    let guidedService: CourseService;
+
+    const GUIDED_MANIFEST: CourseManifest = {
+      format: 'guided',
+      tracks: [
+        { id: 'foundations', title: 'Foundations', blurb: 'Basics', level: 'beginner' },
+        { id: 'advanced', title: 'Advanced', blurb: 'Deep dives', level: 'advanced' },
+      ],
+      topics: [
+        { id: 'ch1', title: 'Chapter 1', blurb: '', order: 1, count: 2, track: 'foundations', number: 1, lessons: ['lesson-a', 'lesson-b'] },
+        { id: 'ch2', title: 'Chapter 2', blurb: '', order: 2, count: 1, track: 'advanced', number: 2, lessons: ['lesson-c'] },
+      ],
+      lessons: [
+        { slug: 'lesson-a', title: 'Lesson A', topic: 'ch1', kind: 'concept', summary: '', tags: [], related: [], minutes: 2, file: 'lessons/lesson-a.md', number: '1.1', aliases: ['old-a'] },
+        { slug: 'lesson-b', title: 'Lesson B', topic: 'ch1', kind: 'task', summary: '', tags: [], related: [], minutes: 3, file: 'lessons/lesson-b.md', number: '1.2' },
+        { slug: 'lesson-c', title: 'Lesson C', topic: 'ch2', kind: 'build', summary: '', tags: [], related: [], minutes: 5, file: 'lessons/lesson-c.md', number: '2.1' },
+      ],
+      legacy: [],
+      path: ['lesson-a', 'lesson-b', 'lesson-c'],
+    };
+
+    beforeEach(async () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+      guidedService = TestBed.inject(CourseService);
+      const loading = guidedService.load();
+      TestBed.inject(HttpTestingController).expectOne('content/course-manifest.json').flush(GUIDED_MANIFEST);
+      await loading;
+    });
+
+    it('identifies as guided', () => {
+      expect(guidedService.isGuided()).toBeTrue();
+    });
+
+    it('exposes the ordered path', () => {
+      expect(guidedService.path()).toEqual(['lesson-a', 'lesson-b', 'lesson-c']);
+    });
+
+    it('returns lessons in route order for byTopic', () => {
+      expect(guidedService.byTopic('ch1').map((l) => l.slug)).toEqual(['lesson-a', 'lesson-b']);
+    });
+
+    it('navigates next and previous across chapter boundaries', () => {
+      expect(guidedService.nextInPath('lesson-a')?.slug).toBe('lesson-b');
+      expect(guidedService.nextInPath('lesson-b')?.slug).toBe('lesson-c');
+      expect(guidedService.nextInPath('lesson-c')).toBeUndefined();
+
+      expect(guidedService.prevInPath('lesson-c')?.slug).toBe('lesson-b');
+      expect(guidedService.prevInPath('lesson-b')?.slug).toBe('lesson-a');
+      expect(guidedService.prevInPath('lesson-a')).toBeUndefined();
+    });
+
+    it('resolves lessons by alias', () => {
+      expect(guidedService.getByAlias('old-a')?.slug).toBe('lesson-a');
+      expect(guidedService.getByAlias('non-existent')).toBeUndefined();
+    });
+
+    it('finds the first unlearned lesson along the path', () => {
+      expect(guidedService.firstUnlearned(new Set())?.slug).toBe('lesson-a');
+      expect(guidedService.firstUnlearned(new Set(['lesson-a']))?.slug).toBe('lesson-b');
+      expect(guidedService.firstUnlearned(new Set(['lesson-a', 'lesson-b']))?.slug).toBe('lesson-c');
+      expect(guidedService.firstUnlearned(new Set(['lesson-a', 'lesson-b', 'lesson-c']))).toBeUndefined();
+    });
+  });
 });
