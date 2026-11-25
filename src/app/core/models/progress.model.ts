@@ -41,6 +41,30 @@ export const MAX_SESSIONS = 50;
 /** Written into `legacyImported` by reset() so old progress is not resurrected. */
 export const LEGACY_DISMISSED = '*';
 
+/**
+ * Moves progress recorded under old lesson slugs (`aliases`, old → new) to the new
+ * slugs: learned keeps the earlier date, bookmarks drop duplicates, lastOpened follows.
+ * Returns `p` itself when nothing needs to move, so callers can skip a write.
+ */
+export function migrateProgress(p: UserProgress, aliases: ReadonlyMap<string, string>): UserProgress {
+  const moves = (slug: string) => aliases.has(slug) && aliases.get(slug) !== slug;
+  const needed =
+    Object.keys(p.learned).some(moves) ||
+    p.bookmarks.some(moves) ||
+    (p.lastOpened !== undefined && moves(p.lastOpened));
+  if (!needed) return p;
+
+  const learned: Record<string, string> = {};
+  for (const [slug, date] of Object.entries(p.learned)) {
+    const target = aliases.get(slug) ?? slug;
+    const existing = learned[target];
+    learned[target] = existing !== undefined && existing < date ? existing : date;
+  }
+  const bookmarks = [...new Set(p.bookmarks.map((slug) => aliases.get(slug) ?? slug))];
+  const lastOpened = p.lastOpened === undefined ? undefined : (aliases.get(p.lastOpened) ?? p.lastOpened);
+  return { ...p, learned, bookmarks, lastOpened };
+}
+
 export function emptyProgress(): UserProgress {
   return {
     version: 2,

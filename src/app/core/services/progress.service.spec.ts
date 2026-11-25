@@ -232,4 +232,53 @@ describe('ProgressService', () => {
       expect(p.bookmarks()).toEqual([]);
     });
   });
+
+  describe('migrateAliases', () => {
+    const ALIASES = new Map([
+      ['signals-in-templates', 'signal'],
+      ['pitfall-mutating-signal-array', 'signal-lists'],
+    ]);
+
+    function seeded(progress: Partial<UserProgress>): ProgressService {
+      localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify({ ...emptyProgress(), ...progress }));
+      return create();
+    }
+
+    it('moves learned, bookmarks and lastOpened to the new slugs, keeping the earlier date', () => {
+      const p = seeded({
+        learned: { 'signals-in-templates': '2026-01-01T00:00:00.000Z', signal: '2026-03-01T00:00:00.000Z', computed: '2026-02-01T00:00:00.000Z' },
+        bookmarks: ['signals-in-templates', 'signal', 'pitfall-mutating-signal-array'],
+        lastOpened: 'pitfall-mutating-signal-array',
+      });
+      p.migrateAliases(ALIASES);
+      expect(p.learned()).toEqual({ signal: '2026-01-01T00:00:00.000Z', computed: '2026-02-01T00:00:00.000Z' });
+      expect(p.bookmarks()).toEqual(['signal', 'signal-lists']);
+      expect(p.lastOpened()).toBe('signal-lists');
+    });
+
+    it('changes nothing on a second run, or when no old slug is stored', () => {
+      const p = seeded({ learned: { 'signals-in-templates': '2026-01-01T00:00:00.000Z' } });
+      p.migrateAliases(ALIASES);
+      const after = p.progress();
+      p.migrateAliases(ALIASES);
+      expect(p.progress()).toBe(after);
+
+      const fresh = seeded({ learned: { computed: '2026-02-01T00:00:00.000Z' } });
+      const before = fresh.progress();
+      fresh.migrateAliases(ALIASES);
+      expect(fresh.progress()).toBe(before);
+    });
+
+    it('migrates progress that arrives with an account, and saves it back', () => {
+      const p = create();
+      p.migrateAliases(ALIASES);
+      const pushed: UserProgress[] = [];
+      const sink: ProgressSink = { push: (_prev, next) => pushed.push(next), replace: () => undefined };
+      p.attachCloud(sink, { ...emptyProgress(), learned: { 'signals-in-templates': '2026-01-01T00:00:00.000Z' } });
+      expect(p.isLearned('signal')).toBeTrue();
+      expect(p.isLearned('signals-in-templates')).toBeFalse();
+      expect(pushed.length).toBe(1);
+      expect(pushed[0].learned).toEqual({ signal: '2026-01-01T00:00:00.000Z' });
+    });
+  });
 });

@@ -9,6 +9,7 @@ import {
   QuizSession,
   UserProgress,
   emptyProgress,
+  migrateProgress,
 } from '../models/progress.model';
 
 /**
@@ -38,6 +39,8 @@ export class ProgressService {
   private readonly _progress = signal<UserProgress>(this.read());
   private readonly _cloud = signal(false);
   private sink: ProgressSink | null = null;
+  /** Old slug → current slug, set by migrateAliases once the manifest is loaded. */
+  private aliases: ReadonlyMap<string, string> = new Map();
 
   /** True while progress is backed by an account rather than this device. */
   readonly isCloud = this._cloud.asReadonly();
@@ -172,6 +175,19 @@ export class ProgressService {
     }));
   }
 
+  /**
+   * Moves progress saved under old lesson slugs to the lessons that replaced them
+   * (guided courses list old slugs as `aliases`). Idempotent: a second run changes
+   * nothing. The map is remembered so an account attached later is migrated too.
+   */
+  migrateAliases(aliases: ReadonlyMap<string, string>): void {
+    this.aliases = aliases;
+    if (aliases.size === 0) return;
+    const current = this._progress();
+    const next = migrateProgress(current, aliases);
+    if (next !== current) this.commit(() => next);
+  }
+
   /** Clears everything — and, when signed in, the account's copy too. */
   reset(): void {
     const next: UserProgress = { ...emptyProgress(), legacyImported: [LEGACY_DISMISSED] };
@@ -204,6 +220,9 @@ export class ProgressService {
     this.sink = sink;
     this._cloud.set(true);
     this._progress.set(initial);
+    // The account may still hold progress under old slugs; moving it goes through
+    // commit(), so the corrected copy is saved back to the account.
+    this.migrateAliases(this.aliases);
   }
 
   /** Shows progress that arrived from the account. Never echoed back to the sink. */

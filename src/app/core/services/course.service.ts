@@ -94,6 +94,11 @@ export class CourseService {
     return this.bySlug().get(slug);
   }
 
+  /** Old slug → current slug, for every alias in the course. */
+  readonly aliasMap = computed<ReadonlyMap<string, string>>(
+    () => new Map([...this.byAlias()].map(([alias, lesson]) => [alias, lesson.slug])),
+  );
+
   getByAlias(slug: string): LessonMeta | undefined {
     return this.byAlias().get(slug);
   }

@@ -20,7 +20,10 @@ export class App implements OnInit {
     // then fold any v1 progress into the new per-bite progress.
     this.course
       .load()
-      .then(() => this.progress.importLegacy(this.course.legacyEntries()))
+      .then(() => {
+        this.progress.importLegacy(this.course.legacyEntries());
+        this.progress.migrateAliases(this.course.aliasMap());
+      })
       .catch(() => {
         /* a failed load is surfaced by the pages that need the manifest */
       });
