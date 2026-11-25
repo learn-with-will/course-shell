@@ -31,7 +31,7 @@
   <!-- Summary -->
   <section class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Summary">
     <div class="panel-ink flex flex-wrap items-center gap-7 rounded-[1.375rem]! p-7 md:col-span-2">
-      <svg class="h-36 w-36 shrink-0" viewBox="0 0 120 120" role="img" [attr.aria-label]="progress.learnedCount() + ' of ' + totalLessons() + ' bites learned, ' + learnedPct() + ' percent'">
+      <svg class="h-36 w-36 shrink-0" viewBox="0 0 120 120" role="img" [attr.aria-label]="progress.learnedCount() + ' of ' + totalLessons() + ' ' + units + ' learned, ' + learnedPct() + ' percent'">
         <circle cx="60" cy="60" r="50" fill="none" stroke="#2a2238" stroke-width="12" />
         <circle
           cx="60"
@@ -48,7 +48,7 @@
         <text x="60" y="79" text-anchor="middle" fill="#b9b2d0" class="text-[11px] font-medium">of the course</text>
       </svg>
       <div class="min-w-0 flex-[1_1_13rem]">
-        <p class="text-xs font-bold tracking-[0.08em] text-ink-300 uppercase">Bites learned</p>
+        <p class="text-xs font-bold tracking-[0.08em] text-ink-300 uppercase">{{ unitsTitle }} learned</p>
         <p class="mt-1.5 font-display text-[3.5rem] leading-none font-bold tracking-[-0.03em] tabular-nums">
           {{ progress.learnedCount() }}<span class="text-3xl text-ink-400"> / {{ totalLessons() }}</span>
         </p>
@@ -56,7 +56,7 @@
         @if (continueLesson(); as c) {
           <a [routerLink]="['/lesson', c.slug]" class="btn-light mt-4">Continue: {{ c.title }}</a>
         } @else {
-          <a routerLink="/random" class="btn-light mt-4">Start with a random bite</a>
+          <a routerLink="/random" class="btn-light mt-4">Start with a random {{ unit }}</a>
         }
       </div>
     </div>
@@ -94,7 +94,7 @@
         <p class="heading text-[1.75rem] tabular-nums">{{ progress.sessions().length }}</p>
       </div>
       <div class="flex items-baseline justify-between">
-        <p class="prose-muted text-sm font-semibold">Saved bites</p>
+        <p class="prose-muted text-sm font-semibold">Saved {{ units }}</p>
         <a routerLink="/bookmarks" class="heading rounded text-[1.75rem] tabular-nums hover:text-brand-600 dark:hover:text-brand-300">
           {{ progress.bookmarks().length }}
         </a>
@@ -247,7 +247,7 @@
   }
 
   <div class="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-ink-200 pt-6 dark:border-ink-800">
-    <p class="prose-muted text-sm">Want a clean slate? This clears learned bites, quiz history and saved bites.</p>
+    <p class="prose-muted text-sm">Want a clean slate? This clears learned {{ units }}, quiz history and saved {{ units }}.</p>
     <button type="button" (click)="resetProgress()" class="btn-danger">Reset progress</button>
   </div>
 </div>

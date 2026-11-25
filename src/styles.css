@@ -503,6 +503,8 @@ kbd {
    LessonPage.enhanceSections() adds .dg-list and a tone class to the list after those headings. */
 .lesson-content ul.dg-list {
   display: grid;
+  /* minmax(0, …): a wide code block inside a card scrolls instead of widening the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.6rem;
   margin: 1rem 0;
   padding: 0;
@@ -511,6 +513,7 @@ kbd {
 }
 .lesson-content ul.dg-list > li {
   position: relative;
+  min-width: 0;
   margin: 0;
   padding: 0.7rem 0.95rem 0.7rem 3.2rem;
   border: 1px solid var(--t-border);

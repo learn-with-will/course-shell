@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CourseService } from '../../core/services/course.service';
 import { ProgressService } from '../../core/services/progress.service';
 import { QuizService } from '../../core/services/quiz.service';
+import { UNIT, UNITS, UNITS_TITLE } from '../../core/models/lesson.model';
 
 /** `/quiz`: pick a way to practise — quick mix, chosen topics, or questions you missed. */
 @Component({
@@ -11,6 +12,9 @@ import { QuizService } from '../../core/services/quiz.service';
   templateUrl: './quiz-hub.html',
 })
 export class QuizHub {
+  protected readonly unit = UNIT;
+  protected readonly units = UNITS;
+  protected readonly unitsTitle = UNITS_TITLE;
   private readonly route = inject(ActivatedRoute);
   protected readonly course = inject(CourseService);
   protected readonly quiz = inject(QuizService);

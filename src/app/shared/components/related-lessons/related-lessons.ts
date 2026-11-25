@@ -1,6 +1,6 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { KIND_CHIPS, KIND_LABELS } from '../../../core/models/lesson.model';
+import { KIND_CHIPS, KIND_LABELS, UNIT, UNITS, UNITS_TITLE } from '../../../core/models/lesson.model';
 import { CourseService } from '../../../core/services/course.service';
 
 /** The 2–4 bites a lesson points to, plus a way to quiz its topic. */
@@ -9,7 +9,7 @@ import { CourseService } from '../../../core/services/course.service';
   imports: [RouterLink],
   template: `
     <section aria-labelledby="related-heading">
-      <h2 id="related-heading" class="heading text-2xl">Related bites</h2>
+      <h2 id="related-heading" class="heading text-2xl">Related {{ units }}</h2>
       <ul class="mt-4 grid grid-cols-[repeat(auto-fill,minmax(13.5rem,1fr))] gap-3">
         @for (lesson of lessons(); track lesson.slug) {
           <li>
@@ -38,6 +38,9 @@ import { CourseService } from '../../../core/services/course.service';
   `,
 })
 export class RelatedLessons {
+  protected readonly unit = UNIT;
+  protected readonly units = UNITS;
+  protected readonly unitsTitle = UNITS_TITLE;
   readonly slug = input.required<string>();
   readonly topic = input.required<string>();
   readonly topicTitle = input.required<string>();

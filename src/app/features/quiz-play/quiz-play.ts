@@ -9,6 +9,7 @@ import { AnswerValue, BankQuestion, QuestionResult, QuizMode } from '../../core/
 import { QuizQuestion } from '../../shared/components/quiz-question/quiz-question';
 import { QuizProgress } from '../../shared/components/quiz-progress/quiz-progress';
 import { QuizResult } from '../../shared/components/quiz-result/quiz-result';
+import { UNIT, UNITS, UNITS_TITLE } from '../../core/models/lesson.model';
 
 type Phase = 'loading' | 'empty' | 'playing' | 'done';
 
@@ -26,6 +27,9 @@ const MAX_QUESTIONS = 20;
   host: { '(document:keydown)': 'onKeydown($event)' },
 })
 export class QuizPlay {
+  protected readonly unit = UNIT;
+  protected readonly units = UNITS;
+  protected readonly unitsTitle = UNITS_TITLE;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly course = inject(CourseService);

@@ -2,7 +2,7 @@
   <header class="mb-9 max-w-2xl">
     <h1 class="heading text-[3.25rem] leading-none tracking-[-0.035em]">Test yourself</h1>
     <p class="prose-muted mt-3 text-[1.0625rem] text-pretty">
-      One question at a time, with the answer and a link back to the bite as soon as you check.
+      One question at a time, with the answer and a link back to the {{ unit }} as soon as you check.
       @if (quiz.bank().length) {
         {{ quiz.bank().length }} questions across {{ topics().length }} topics.
       }

@@ -6,7 +6,7 @@ import { CourseService } from '../../core/services/course.service';
 import { ProgressService } from '../../core/services/progress.service';
 import { QuizService } from '../../core/services/quiz.service';
 import { CloudSyncService } from '../../core/sync/cloud-sync.service';
-import { LessonMeta, Topic } from '../../core/models/lesson.model';
+import { LessonMeta, Topic, UNIT, UNITS, UNITS_TITLE } from '../../core/models/lesson.model';
 import { QuizMode } from '../../core/models/quiz.model';
 import { SYNC_LABELS } from '../../shared/components/account-menu/account-menu';
 
@@ -32,6 +32,9 @@ const MODE_LABELS: Record<QuizMode, string> = {
   templateUrl: './dashboard.html',
 })
 export class Dashboard {
+  protected readonly unit = UNIT;
+  protected readonly units = UNITS;
+  protected readonly unitsTitle = UNITS_TITLE;
   protected readonly course = inject(CourseService);
   protected readonly progress = inject(ProgressService);
   protected readonly auth = inject(AuthService);
@@ -109,9 +112,9 @@ export class Dashboard {
     else if (done.length > 1) parts.push(`${done.length} topics are complete.`);
     if (open[0]) {
       const left = open[0].total - open[0].learned;
-      parts.push(`${open[0].topic.title} is next closest: ${left} ${left === 1 ? 'bite' : 'bites'} to go.`);
+      parts.push(`${open[0].topic.title} is next closest: ${left} ${left === 1 ? UNIT : UNITS} to go.`);
     }
-    return parts.join(' ') || 'Every bite you mark as learned counts here.';
+    return parts.join(' ') || `Every ${UNIT} you mark as learned counts here.`;
   });
 
   protected readonly continueLesson = computed(() => {

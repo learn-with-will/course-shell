@@ -16,6 +16,12 @@ const TONE_CHIPS: Record<KindTone, string> = {
   neutral: 'chip-neutral',
 };
 
+/** What the UI calls one lesson: "lesson" in guided courses, "bite" in bite courses. */
+export const UNIT = COURSE.format === 'guided' ? 'lesson' : 'bite';
+export const UNITS = `${UNIT}s`;
+/** Capitalised plural, for headings: "Lessons" or "Bites". */
+export const UNITS_TITLE = UNITS.charAt(0).toUpperCase() + UNITS.slice(1);
+
 export const KINDS: LessonKind[] = COURSE.kinds.map((k) => k.id);
 export const KIND_LABELS = byKind((k) => k.label);
 export const KIND_HINTS = byKind((k) => k.hint);

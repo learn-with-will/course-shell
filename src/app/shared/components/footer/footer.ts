@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { COURSE } from '../../../core/course/course';
 import { BrandMark } from '../brand-mark/brand-mark';
+import { UNIT, UNITS, UNITS_TITLE } from '../../../core/models/lesson.model';
 
 @Component({
   selector: 'app-footer',
@@ -17,7 +18,7 @@ import { BrandMark } from '../brand-mark/brand-mark';
         </a>
         <p>One idea per lesson. Free and open, no account needed.</p>
         <nav aria-label="Footer" class="flex gap-5">
-          <a routerLink="/lessons" class="rounded hover:text-ink-900 dark:hover:text-white">All bites</a>
+          <a routerLink="/lessons" class="rounded hover:text-ink-900 dark:hover:text-white">All {{ units }}</a>
           <a routerLink="/quiz" class="rounded hover:text-ink-900 dark:hover:text-white">Quiz</a>
           <a routerLink="/random" class="rounded hover:text-ink-900 dark:hover:text-white">Surprise me</a>
         </nav>
@@ -26,5 +27,8 @@ import { BrandMark } from '../brand-mark/brand-mark';
   `,
 })
 export class Footer {
+  protected readonly unit = UNIT;
+  protected readonly units = UNITS;
+  protected readonly unitsTitle = UNITS_TITLE;
   protected readonly siteName = COURSE.name;
 }

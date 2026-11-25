@@ -5,6 +5,7 @@ import { CourseService } from '../../../core/services/course.service';
 import { ThemeService } from '../../../core/services/theme.service';
 import { AccountMenu } from '../account-menu/account-menu';
 import { BrandMark } from '../brand-mark/brand-mark';
+import { UNIT, UNITS, UNITS_TITLE } from '../../../core/models/lesson.model';
 
 /** The id of the search box on the lessons page, which Ctrl/⌘ K focuses. */
 export const LESSON_SEARCH_ID = 'lesson-search';
@@ -19,6 +20,9 @@ export const LESSON_SEARCH_ID = 'lesson-search';
   host: { class: 'contents', '(document:keydown)': 'onKeydown($event)' },
 })
 export class Navbar {
+  protected readonly unit = UNIT;
+  protected readonly units = UNITS;
+  protected readonly unitsTitle = UNITS_TITLE;
   protected readonly theme = inject(ThemeService);
   private readonly course = inject(CourseService);
   private readonly router = inject(Router);
