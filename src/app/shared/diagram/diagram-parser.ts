@@ -2,8 +2,7 @@
 //
 // Diagrams are optional: use one only when the information really is a sequence
 // of steps, a choice, or a dependency graph. A table or a callout is often the
-// better visual (see CONTENT_GUIDE.md, "Choose the visual from the shape of the
-// information").
+// better visual.
 //
 // A fenced block whose language is `sequence`, `tree` or `flow` is parsed here
 // and drawn by <app-diagram>. This file is plain TypeScript with no imports and

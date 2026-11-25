@@ -107,7 +107,7 @@ export function checkBiteBody({ where, body, stats, prose, teachesCode, allowedF
   if (!(hasTable || hasDiagram || hasCallout || hasBeforeAfter))
     fail(
       where,
-      'needs at least one visual that fits the information: a table, a Tip/Note/Watch out callout, a Before/After code block, or (when it is a sequence, a choice or a dependency graph) a diagram. See CONTENT_GUIDE.md',
+      'needs at least one visual that fits the information: a table, a Tip/Note/Watch out callout, a Before/After code block, or (when it is a sequence, a choice or a dependency graph) a diagram',
     );
 }
 

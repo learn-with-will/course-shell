@@ -27,4 +27,4 @@ quiz/questions.json            the question bank (all five question types)
    npm run validate -- ../my-course --strict
    ```
 
-The three lessons here explain each step, and the shell's `CONTENT_GUIDE.md` has every rule.
+The three lessons here explain each step.

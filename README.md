@@ -54,7 +54,7 @@ npm run validate -- ../angular --strict    # the release rules the deploy workfl
 npm run build -- ../angular                # production build into dist/course-shell/browser
 npm test                                   # unit tests, against the demo course
 npm run test:scripts                       # tests for the Node scripts
-npm run emulators                          # local Firebase auth + Firestore (FIREBASE_SETUP.md)
+npm run emulators                          # local Firebase auth + Firestore
 ```
 
 Options after the course folder go to the Angular CLI, for example
@@ -120,9 +120,3 @@ scripts/
   validates, tests and builds the demo course on every push.
 - **Storage keys come from the course id** (`<id>-learning-progress-v2`, `<id>-learning-theme`).
   All courses share one origin, so a fixed key would mix their progress.
-
-## Guides
-
-- [CONTENT_GUIDE.md](CONTENT_GUIDE.md): how to write a lesson, the visuals, the diagram syntax,
-  quiz questions, and every `course.json` field.
-- [FIREBASE_SETUP.md](FIREBASE_SETUP.md): the optional sign-in and progress sync.
