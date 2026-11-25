@@ -326,7 +326,8 @@ export class LessonPage {
       const cls = CALLOUTS[label];
       if (cls) {
         quote.classList.add('callout', cls);
-      } else {
+      } else if (this.course.isGuided()) {
+        // Guided lessons define a new term as `> **Term:** definition`.
         quote.classList.add('callout', 'dg-tone-blue');
       }
     });
