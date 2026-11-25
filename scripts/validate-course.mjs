@@ -24,14 +24,19 @@ const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const IMAGE_EXTENSIONS = /\.(svg|png|jpe?g|webp)$/i;
 const MAX_IMAGE_BYTES = 200 * 1024;
 
+// Guided lessons explain a whole topic, so concept and task lessons may use their own "##"
+// headings between the fixed opening ("Why you need it") and the fixed ending ("Recap").
+// `open: true` = free headings in between; `allowed` then lists the fixed ones only.
 const GUIDED_KINDS = {
   concept: {
-    allowed: ['Why you need it', 'Try it', 'How it works', 'Common mistakes', 'Going further', 'Recap'],
-    required: ['Why you need it', 'How it works', 'Recap'],
+    open: true,
+    first: 'Why you need it',
+    required: ['Why you need it', 'Recap'],
   },
   task: {
-    allowed: ['Why you need it', 'Try it', 'How it works', 'Common mistakes', 'Going further', 'Recap'],
-    required: ['Why you need it', 'Try it', 'How it works', 'Recap'],
+    open: true,
+    first: 'Why you need it',
+    required: ['Why you need it', 'Try it', 'Recap'],
   },
   build: {
     allowed: ["What you'll build", 'Steps', 'Check your work', 'Solution', 'Recap'],
@@ -42,6 +47,16 @@ const GUIDED_KINDS = {
     required: ['What you see', 'Why it happens', 'How to fix it', 'Recap'],
   },
 };
+
+// Limits for guided lessons: long enough to explain a topic properly, in plain words.
+const GUIDED_LIMITS = {
+  default: { minMin: 2, maxMin: 18, maxWords: 3000, maxCode: 16 },
+  build: { minMin: 2, maxMin: 20, maxWords: 3500, maxCode: 20 },
+};
+const GUIDED_MAX_DIAGRAMS = 3;
+const GUIDED_MAX_IMAGES = 4;
+const GUIDED_RECAP_BULLETS = [3, 6];
+const GUIDED_MISTAKE_BULLETS = [1, 5];
 
 const bullets = (text) => (text.match(/^\s{0,1}(?:[-*]|\d+\.)\s+\S/gm) ?? []).length;
 const countSteps = (text) => (text.match(/^\s*(?:\*\*[Ss]tep\s+\d+|[0-9]+\.)/gm) ?? []).length;
@@ -121,47 +136,45 @@ export function checkGuidedLesson({ where, meta, body, stats, prose, teachesCode
   if (/^# .+$/m.test(prose)) fail(where, 'no H1 in the body — the title comes from front-matter');
 
   const h2s = [...prose.matchAll(/^## (.+?)\s*$/gm)].map((m) => m[1]);
-  let last = -1;
-  for (const h of h2s) {
-    const idx = kindDef.allowed.indexOf(h);
-    if (idx === -1) {
-      fail(where, `unknown section "## ${h}" for kind "${meta.kind}" (allowed: ${kindDef.allowed.join(', ')})`);
-    } else if (idx < last) {
-      fail(where, `section out of order: "## ${h}"`);
-    } else {
-      last = idx;
+  if (kindDef.open) {
+    if (h2s.length && h2s[0] !== kindDef.first) fail(where, `the first section must be "## ${kindDef.first}"`);
+    if (h2s.length && h2s.at(-1) !== 'Recap') fail(where, 'the last section must be "## Recap"');
+    const dupes = h2s.filter((h, i) => h2s.indexOf(h) !== i);
+    if (dupes.length) fail(where, `section used twice: "## ${dupes[0]}"`);
+  } else {
+    let last = -1;
+    for (const h of h2s) {
+      const idx = kindDef.allowed.indexOf(h);
+      if (idx === -1) {
+        fail(where, `unknown section "## ${h}" for kind "${meta.kind}" (allowed: ${kindDef.allowed.join(', ')})`);
+      } else if (idx < last) {
+        fail(where, `section out of order: "## ${h}"`);
+      } else {
+        last = idx;
+      }
     }
   }
   for (const s of kindDef.required) {
     if (!h2s.includes(s)) fail(where, `missing section "## ${s}"`);
   }
 
+  const [minRecap, maxRecap] = GUIDED_RECAP_BULLETS;
   const recap = sectionInProse('Recap', prose);
-  if (recap !== null && bullets(recap) !== 3) {
-    fail(where, `"## Recap" needs exactly 3 bullets (got ${bullets(recap)})`);
+  if (recap !== null && (bullets(recap) < minRecap || bullets(recap) > maxRecap)) {
+    fail(where, `"## Recap" needs ${minRecap}–${maxRecap} bullets (got ${bullets(recap)})`);
   }
+  const [minMistakes, maxMistakes] = GUIDED_MISTAKE_BULLETS;
   const commonMistakes = sectionInProse('Common mistakes', prose);
-  if (commonMistakes !== null && (bullets(commonMistakes) < 1 || bullets(commonMistakes) > 3)) {
-    fail(where, `"## Common mistakes" needs 1–3 bullets (got ${bullets(commonMistakes)})`);
+  if (commonMistakes !== null && (bullets(commonMistakes) < minMistakes || bullets(commonMistakes) > maxMistakes)) {
+    fail(where, `"## Common mistakes" needs ${minMistakes}–${maxMistakes} bullets (got ${bullets(commonMistakes)})`);
   }
   const steps = sectionInProse('Steps', prose);
   if (steps !== null && countSteps(steps) < 2) {
     fail(where, `"## Steps" needs at least 2 steps (got ${countSteps(steps)})`);
   }
 
-  if (h2s.includes('Going further')) {
-    const topic = topicById.get(meta.topic);
-    const track = topic ? trackById.get(topic.track) : null;
-    if (track?.level !== 'advanced') {
-      fail(where, '"## Going further" is only allowed in advanced tracks');
-    }
-  }
-
   const isBuild = meta.kind === 'build';
-  const minMin = 2;
-  const maxMin = isBuild ? 10 : 7;
-  const maxWords = isBuild ? 1500 : 1100;
-  const maxCode = isBuild ? 10 : 6;
+  const { minMin, maxMin, maxWords, maxCode } = isBuild ? GUIDED_LIMITS.build : GUIDED_LIMITS.default;
 
   if (stats.words > maxWords) fail(where, `${stats.words} words (max ${maxWords}) — split the lesson`);
   if (stats.minutes < minMin || stats.minutes > maxMin) {
@@ -178,7 +191,7 @@ export function checkGuidedLesson({ where, meta, body, stats, prose, teachesCode
     }
   }
   if (code.length > maxCode) fail(where, `${code.length} code blocks (max ${maxCode})`);
-  if (diagrams.length > 1) fail(where, `${diagrams.length} diagrams (max 1)`);
+  if (diagrams.length > GUIDED_MAX_DIAGRAMS) fail(where, `${diagrams.length} diagrams (max ${GUIDED_MAX_DIAGRAMS})`);
   if (teachesCode && (meta.kind === 'task' || isBuild) && code.length === 0) {
     fail(where, 'needs at least one code block');
   }
@@ -194,7 +207,7 @@ export function checkGuidedLesson({ where, meta, body, stats, prose, teachesCode
 
   // Images live in content/images/ and are written `![alt](images/name.png)`.
   const images = [...prose.matchAll(/!\[(.*?)\]\((.*?)\)/g)];
-  if (images.length > 2) fail(where, `${images.length} images (max 2)`);
+  if (images.length > GUIDED_MAX_IMAGES) fail(where, `${images.length} images (max ${GUIDED_MAX_IMAGES})`);
   for (const [, alt, src] of images) {
     if (!alt.trim()) fail(where, `image ${src} needs alt text: ![what it shows](${src})`);
     if (!/^images\/[^/]+$/.test(src)) {
@@ -351,7 +364,8 @@ export function validateCourse(courseDir, { strict = false } = {}) {
       if (isGuided) {
         if (meta.title.length > 60) fail(where, `title is ${meta.title.length} chars (max 60)`);
         const wordLetters = (meta.title.match(/[\p{L}\p{N}]+/gu) ?? []).filter((w) => /\p{L}/u.test(w));
-        if (wordLetters.length < 2) fail(where, 'title needs at least two words with letters');
+        // A one-word noun ("Classes", "Interceptors") is a fine title for a topic lesson.
+        if (wordLetters.length < 1) fail(where, 'title needs at least one word with letters');
         if (/^pitfall\b/i.test(meta.title.trim())) fail(where, 'title must not begin with "Pitfall"');
       } else {
         if (!/[A-Za-z0-9]/.test(meta.title)) fail(where, 'title needs at least one letter or digit (used to sort A–Z)');

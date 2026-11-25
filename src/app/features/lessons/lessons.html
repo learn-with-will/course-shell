@@ -4,7 +4,7 @@
       @if (course.isGuided()) {
         <h1 class="heading text-[3.25rem] leading-none tracking-[-0.035em]">All lessons</h1>
         <p class="prose-muted mt-3 text-[1.0625rem] text-pretty">
-          {{ course.lessons().length || '' }} short lessons in a clear order. Filter by chapter or kind, or search.
+          {{ course.lessons().length || '' }} lessons in a clear order. Filter by chapter or kind, or search.
         </p>
       } @else {
         <h1 class="heading text-[3.25rem] leading-none tracking-[-0.035em]">All bites</h1>

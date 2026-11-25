@@ -175,7 +175,7 @@ describe('validateCourse', () => {
     );
   });
 
-  it('V9: fails if Recap does not have exactly 3 bullets', () => {
+  it('V9: fails if Recap has fewer than 3 bullets', () => {
     withTempCourse(
       (dir) => {
         const file = join(dir, 'content', 'lessons', 'what-is-guided.md');
@@ -191,14 +191,14 @@ describe('validateCourse', () => {
       (dir) => {
         const res = validateCourse(dir, { strict: true });
         assert.ok(
-          res.errors.some((e) => e.includes('"## Recap" needs exactly 3 bullets (got 2)')),
+          res.errors.some((e) => e.includes('"## Recap" needs 3–6 bullets (got 2)')),
           `Expected Recap bullets error, got: ${res.errors.join(', ')}`,
         );
       },
     );
   });
 
-  it('V10: fails if Going further is present in a non-advanced track', () => {
+  it('V10: accepts free headings and Going further between the fixed opening and Recap', () => {
     withTempCourse(
       (dir) => {
         const file = join(dir, 'content', 'lessons', 'what-is-guided.md');
@@ -207,15 +207,33 @@ describe('validateCourse', () => {
           file,
           content.replace(
             '## Recap',
-            '## Going further\n\nSome advanced tips that belong only in advanced tracks.\n\n## Recap',
+            '## A heading of my own\n\nMore explanation.\n\n## Going further\n\nSome extra detail.\n\n## Recap',
           ),
         );
       },
       (dir) => {
         const res = validateCourse(dir, { strict: true });
+        assert.equal(res.errors.length, 0, `Expected 0 errors, got: ${res.errors.join(', ')}`);
+      },
+    );
+  });
+
+  it('V10b: fails if a concept lesson does not open with Why you need it or end with Recap', () => {
+    withTempCourse(
+      (dir) => {
+        const file = join(dir, 'content', 'lessons', 'what-is-guided.md');
+        const content = readFileSync(file, 'utf8');
+        writeFileSync(file, content.replace('## Why you need it', '## Intro') + '\n## Afterword\n\nText.\n');
+      },
+      (dir) => {
+        const res = validateCourse(dir, { strict: true });
         assert.ok(
-          res.errors.some((e) => e.includes('only allowed in advanced tracks')),
-          `Expected Going further track level error, got: ${res.errors.join(', ')}`,
+          res.errors.some((e) => e.includes('the first section must be "## Why you need it"')),
+          `Expected first-section error, got: ${res.errors.join(', ')}`,
+        );
+        assert.ok(
+          res.errors.some((e) => e.includes('the last section must be "## Recap"')),
+          `Expected last-section error, got: ${res.errors.join(', ')}`,
         );
       },
     );

@@ -280,7 +280,7 @@ export function normalizeCourse(raw) {
     : scaleFrom(raw.brand.color);
   const home = raw.home ?? {};
   const defaultHeadline = isGuided
-    ? [`Learn ${raw.subject} `, 'step by step', ', one short lesson at a time.']
+    ? [`Learn ${raw.subject} `, 'step by step', ', one clear lesson at a time.']
     : [`Learn ${raw.subject} one `, 'five‑minute bite', ' at a time.'];
   return {
     id: raw.id,
