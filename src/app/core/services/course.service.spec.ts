@@ -57,10 +57,6 @@ describe('CourseService', () => {
     expect(service.lessons().map((l) => l.slug)).toEqual(['computed', 'effect', 'if-block', 'two-way', 'signal']);
   });
 
-  it('groups lessons under their letter', () => {
-    expect(service.alphabetical().map((g) => g.letter)).toEqual(['C', 'E', 'I', 'N', 'S']);
-  });
-
   it('only exposes topics that have lessons', () => {
     expect(service.topics().map((t) => t.id)).toEqual(['signals', 'templates']);
   });
@@ -110,9 +106,9 @@ describe('CourseService', () => {
   });
 
   describe('legacy', () => {
-    it('maps an old slug and id to their entry', () => {
+    it('maps an old slug to its entry', () => {
       expect(service.legacyBySlug('introduction-to-signals')?.lessons).toEqual(['signal', 'computed']);
-      expect(service.legacyById('lesson-08')?.topic).toBe('signals');
+      expect(service.legacyBySlug('introduction-to-signals')?.topic).toBe('signals');
       expect(service.legacyBySlug('nope')).toBeUndefined();
     });
 

@@ -9,9 +9,7 @@
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/course.mjs test",
     "validate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/course.mjs validate",
     "prepare-course": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/course.mjs prepare",
-    "test:scripts": "node --test scripts/*.test.mjs scripts/revamp/*.test.mjs",
-    "revamp:diagnose": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/revamp/diagnose.mjs",
-    "revamp:outline": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/revamp/outline.mjs",
+    "test:scripts": "node --test scripts/*.test.mjs",
     "emulators": "npx --yes firebase-tools@latest emulators:start --only auth,firestore --project demo-course-shell"
   },
   "prettier": {
@@ -31,7 +29,6 @@
     "@angular/common": "^20.3.0",
     "@angular/compiler": "^20.3.0",
     "@angular/core": "^20.3.0",
-    "@angular/forms": "^20.3.0",
     "@angular/platform-browser": "^20.3.0",
     "@angular/router": "^20.3.0",
     "firebase": "^13.3.0",

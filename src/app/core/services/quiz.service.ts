@@ -40,10 +40,6 @@ export class QuizService {
     return this.loadPromise;
   }
 
-  getById(id: string): BankQuestion | undefined {
-    return this._bank().find((q) => q.id === id);
-  }
-
   /**
    * Draws up to `count` distinct questions at random.
    *  - `quick`:  the whole bank

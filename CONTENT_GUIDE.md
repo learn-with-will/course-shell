@@ -7,14 +7,13 @@ folder into a site. This guide covers the lessons first, then the quiz, then `co
 
 A course uses one of two formats, set by `"format"` in `course.json`:
 
-- **`guided`**: short lessons on an ordered path (track → chapter → lesson). Every new course and
-  every revamped course uses it. Its rules are in [Guided format](#guided-format), right below.
-- **`bites`** (the default): one-idea lessons read in any order. Kept for the courses that have
-  not moved yet; its rules start at [Writing a lesson bite](#writing-a-lesson-bite).
+- **`guided`**: short lessons on an ordered path (track → chapter → lesson). Every new course
+  uses it. Its rules are in [Guided format](#guided-format), right below.
+- **`bites`** (the default): one-idea lessons read in any order. Its rules start at
+  [Writing a lesson bite](#writing-a-lesson-bite).
 
 The quiz, `course.json` and publishing sections at the end apply to both.
-[`examples/guided-course`](examples/guided-course) is a working guided course; the Angular course
-(`angular/revamp/`, branch `revamp/pilot`) is the full-size reference.
+[`examples/guided-course`](examples/guided-course) is a working guided course.
 
 ## Guided format
 
@@ -213,7 +212,7 @@ replace an explanation. The [diagram syntax](#diagram-syntax) is the same as for
   answered (arrow keys, multi-select, y/N), give the learner the command with its options
   (`--style=css --ssr=false …`) and explain which question each option answers.
 - **Courses without code:** check every number, definition and recommendation against a primary
-  source and list the sources in the course's `revamp/BRIEFS.md`.
+  source, and keep a list of the sources with the course.
 - Anything you could not check **stays out of the lesson**.
 
 ### Quiz (guided)
@@ -227,7 +226,7 @@ really make. `explanation` is 1–2 sentences in the lesson's voice.
 
 Any "no" means the lesson is not done.
 
-1. Title, slug, `topic`, `kind`, `aliases` match `revamp/OUTLINE.md`?
+1. Title, slug, `topic` and `kind` match where the lesson sits in `content/topics.json`?
 2. `goal` starts with a verb and is reachable with this lesson and its `requires` alone?
 3. One main idea?
 4. Every idea was taught earlier or is defined here?
@@ -267,9 +266,7 @@ Any "no" means the lesson is not done.
 characters. `kinds` must be exactly those four ids (labels, hints and tones may change).
 
 **`content/topics.json`**: each chapter also has `track` and `lessons` (slugs in reading order;
-slugs without a file yet are allowed while writing). It is **generated** from `revamp/OUTLINE.md`
-by `npm run revamp:outline -- ../<course> --write`; do not edit it by hand. Chapter and lesson
-numbers (`5.2`) come from the position on the path, counting lessons not written yet, so numbers
+slugs without a file yet are allowed while writing). Chapter and lesson numbers (`5.2`) come from the position on the path, counting lessons not written yet, so numbers
 never jump.
 
 **`content/glossary.json`**: `[{ "term", "aliases": [], "definition", "definedIn": "<slug>" }]`.

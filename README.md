@@ -2,9 +2,15 @@
 
 The one user interface behind every [learn-with-will](https://learn-with-will.github.io/)
 course. A course is a folder of content plus a small `course.json`; this repository turns that
-folder into a site: a home page, lessons A–Z with search and filters, a lesson reader with code
+folder into a site: a home page, a lesson list with search and filters, a lesson reader with code
 highlighting and diagrams, a quiz bank, a progress dashboard, bookmarks, light and dark themes,
 and optional sign-in that keeps progress across devices.
+
+A course uses one of two formats, set by `format` in `course.json`:
+
+- **`bites`** (the default): short stand-alone lessons listed A–Z, read in any order.
+- **`guided`**: lessons on an ordered path of tracks and chapters, with previous/next
+  navigation.
 
 The shell contains no course of its own. Names, colours, home page copy, lesson kinds and code
 languages all come from the course being built.
@@ -29,9 +35,10 @@ Each course is published at `https://learn-with-will.github.io/<course>/`. Its w
 out this repository at `main`, so a course picks up a shell change on its next deploy (a push,
 or a manual run of its workflow).
 
-[`examples/demo-course`](examples/demo-course) is a complete tiny course about writing courses.
-It is the default input for every command, the fixture for the tests, and the folder to copy
-when starting a new course.
+[`examples/demo-course`](examples/demo-course) is a complete tiny `bites` course about writing
+courses. It is the default input for every command and the fixture for the unit tests.
+[`examples/guided-course`](examples/guided-course) is the same for the `guided` format, and the
+folder to copy when starting a new course.
 
 ## Commands
 
@@ -46,6 +53,8 @@ npm run validate -- ../angular             # check the course; unfinished topics
 npm run validate -- ../angular --strict    # the release rules the deploy workflow uses
 npm run build -- ../angular                # production build into dist/course-shell/browser
 npm test                                   # unit tests, against the demo course
+npm run test:scripts                       # tests for the Node scripts
+npm run emulators                          # local Firebase auth + Firestore (FIREBASE_SETUP.md)
 ```
 
 Options after the course folder go to the Angular CLI, for example
@@ -94,7 +103,8 @@ scripts/
 ├── course-config.mjs      # reads and checks course.json, fills in defaults
 ├── prepare-course.mjs     # writes the generated files
 ├── generate-manifest.mjs  # lesson index and reading time
-└── validate-course.mjs    # the release gate
+├── validate-course.mjs    # the release gate
+└── writing-notes.mjs      # readability notes for guided lessons (used by validate)
 
 .github/workflows/
 ├── deploy-course.yml      # reusable workflow that course repositories call
@@ -115,6 +125,4 @@ scripts/
 
 - [CONTENT_GUIDE.md](CONTENT_GUIDE.md): how to write a lesson, the visuals, the diagram syntax,
   quiz questions, and every `course.json` field.
-- [MIGRATING_A_COURSE.md](MIGRATING_A_COURSE.md): moving a course from the old long-lesson
-  shells onto this one, and starting a new course.
 - [FIREBASE_SETUP.md](FIREBASE_SETUP.md): the optional sign-in and progress sync.

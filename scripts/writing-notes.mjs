@@ -1,4 +1,4 @@
-// Writing notes for guided courses (S13 of REVAMP_PLAN.md). These are advice for
+// Writing notes for guided courses. These are advice for
 // the author, never errors: they do not fail `validate --strict`.
 //
 //  - glossary: a term from content/glossary.json used in a lesson that comes

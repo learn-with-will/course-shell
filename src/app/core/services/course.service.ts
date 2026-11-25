@@ -1,15 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import {
-  CourseManifest,
-  LegacyEntry,
-  LessonMeta,
-  LetterGroup,
-  Topic,
-  byTitle,
-  letterOf,
-} from '../models/lesson.model';
+import { CourseManifest, LegacyEntry, LessonMeta, Topic, byTitle } from '../models/lesson.model';
 import { shuffled } from '../util/shuffle';
 
 export interface SampleOptions {
@@ -46,18 +38,6 @@ export class CourseService {
 
   /** Every lesson in A–Z order (leading symbols ignored). */
   readonly lessons = computed(() => [...this._manifest().lessons].sort(byTitle));
-
-  /** Lessons grouped under A–Z, with `#` for titles that start with a digit. */
-  readonly alphabetical = computed<LetterGroup[]>(() => {
-    const groups = new Map<string, LessonMeta[]>();
-    for (const lesson of this.lessons()) {
-      const letter = letterOf(lesson.title);
-      groups.set(letter, [...(groups.get(letter) ?? []), lesson]);
-    }
-    return [...groups.entries()]
-      .map(([letter, lessons]) => ({ letter, lessons }))
-      .sort((a, b) => (a.letter === '#' ? 1 : b.letter === '#' ? -1 : a.letter.localeCompare(b.letter)));
-  });
 
   readonly legacyEntries = computed(() => this._manifest().legacy);
 
@@ -167,9 +147,5 @@ export class CourseService {
 
   legacyBySlug(slug: string): LegacyEntry | undefined {
     return this._manifest().legacy.find((e) => e.slug === slug);
-  }
-
-  legacyById(id: string): LegacyEntry | undefined {
-    return this._manifest().legacy.find((e) => e.id === id);
   }
 }
