@@ -1,10 +1,17 @@
 <div class="mx-auto max-w-7xl px-4 pt-12 pb-6 sm:px-6">
   <header class="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
     <div class="max-w-2xl">
-      <h1 class="heading text-[3.25rem] leading-none tracking-[-0.035em]">All bites</h1>
-      <p class="prose-muted mt-3 text-[1.0625rem] text-pretty">
-        {{ course.lessons().length || '' }} short lessons, A–Z. Filter by topic or kind, or just search.
-      </p>
+      @if (course.isGuided()) {
+        <h1 class="heading text-[3.25rem] leading-none tracking-[-0.035em]">All lessons</h1>
+        <p class="prose-muted mt-3 text-[1.0625rem] text-pretty">
+          {{ course.lessons().length || '' }} short lessons in a clear order. Filter by chapter or kind, or search.
+        </p>
+      } @else {
+        <h1 class="heading text-[3.25rem] leading-none tracking-[-0.035em]">All bites</h1>
+        <p class="prose-muted mt-3 text-[1.0625rem] text-pretty">
+          {{ course.lessons().length || '' }} short lessons, A–Z. Filter by topic or kind, or just search.
+        </p>
+      }
     </div>
     <div role="search" class="min-w-64 flex-[0_1_29rem]">
       <label [for]="searchId" class="sr-only">Search lessons</label>
@@ -49,8 +56,8 @@
 
   <div class="mt-9 flex flex-col gap-8 lg:flex-row lg:items-start">
     <!-- Topic rail: a sticky side list on desktop, a scrolling strip on smaller screens. -->
-    <nav aria-label="Topics" class="min-w-0 lg:sticky lg:top-24 lg:w-64 lg:shrink-0">
-      <p class="eyebrow mb-2 hidden px-3 lg:block">Topics</p>
+    <nav [attr.aria-label]="course.isGuided() ? 'Chapters' : 'Topics'" class="min-w-0 lg:sticky lg:top-24 lg:w-64 lg:shrink-0">
+      <p class="eyebrow mb-2 hidden px-3 lg:block">{{ course.isGuided() ? 'Chapters' : 'Topics' }}</p>
       <ul class="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0">
         <li class="shrink-0">
           <button
@@ -64,7 +71,7 @@
                 : 'font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-white'
             "
           >
-            All topics
+            {{ course.isGuided() ? 'All chapters' : 'All topics' }}
             <span class="font-mono text-xs opacity-75">{{ course.lessons().length }}</span>
           </button>
         </li>
@@ -81,7 +88,12 @@
                   : 'font-medium text-ink-700 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-300 dark:hover:bg-ink-800 dark:hover:text-white'
               "
             >
-              {{ t.title }}
+              <span>
+                @if (course.isGuided() && t.number) {
+                  <span class="mr-1.5 font-mono text-xs opacity-75">{{ t.number }}</span>
+                }
+                {{ t.title }}
+              </span>
               <span class="font-mono text-xs opacity-75">{{ t.count }}</span>
             </button>
           </li>
@@ -94,7 +106,7 @@
       @if (topicSummary(); as s) {
         <div class="card mb-5 flex flex-wrap items-center gap-5 p-6">
           <div class="min-w-0 flex-[1_1_18rem]">
-            <p class="font-mono text-xs font-semibold text-brand-600 dark:text-brand-300">{{ s.number }} · TOPIC</p>
+            <p class="font-mono text-xs font-semibold text-brand-600 dark:text-brand-300">{{ s.label }}</p>
             <h2 class="heading mt-1.5 text-[1.875rem]">{{ s.topic.title }}</h2>
             <p class="prose-muted mt-1.5 text-[0.9375rem]">{{ s.topic.blurb }}</p>
           </div>
@@ -121,7 +133,7 @@
               [queryParams]="{ mode: 'topic', topics: s.topic.id, count: 5 }"
               class="btn-secondary ml-2"
             >
-              Quiz this topic
+              {{ course.isGuided() ? 'Quiz this chapter' : 'Quiz this topic' }}
             </a>
           </div>
         </div>
@@ -198,7 +210,7 @@
       </div>
 
       <!-- Jump to letter (A–Z view only) -->
-      @if (!flat() && groups().length) {
+      @if (!flat() && sort() === 'az' && groups().length) {
         <nav
           aria-label="Jump to letter"
           class="sticky top-17 z-20 -mx-4 mt-4 bg-ink-50/90 px-4 py-1.5 backdrop-blur sm:mx-0 sm:px-0 dark:bg-ink-950/90"
@@ -233,7 +245,7 @@
           <div class="card border-dashed p-12 text-center">
             <p class="font-semibold text-ink-900 dark:text-white">No lessons match.</p>
             <p class="prose-muted mt-1 text-sm">
-              {{ hideLearned() ? 'You may have learned them all. Try showing learned bites, or clear the filters.' : 'Try a broader word, or clear the filters.' }}
+              {{ hideLearned() ? 'You may have learned them all. Try showing learned ' + (course.isGuided() ? 'lessons' : 'bites') + ', or clear the filters.' : 'Try a broader word, or clear the filters.' }}
             </p>
             <button type="button" class="btn-secondary mt-5" (click)="clearFilters()">Clear filters</button>
           </div>
@@ -246,6 +258,26 @@
               <li><app-lesson-row [lesson]="lesson" /></li>
             }
           </ul>
+        } @else if (sort() === 'path') {
+          @for (tg of trackGroups(); track tg.id) {
+            <section class="mb-8" [attr.aria-label]="tg.title">
+              <p class="eyebrow">{{ tg.title }}</p>
+              <p class="prose-muted mt-1 text-sm">{{ tg.blurb }}</p>
+              @for (chapter of tg.chapters; track chapter.id) {
+                <h2 class="heading mt-5 mb-2 flex items-baseline gap-2.5 text-[1.375rem]">
+                  @if (chapter.number) {
+                    <span class="font-mono text-base text-brand-600 dark:text-brand-300">{{ chapter.number }}</span>
+                  }
+                  {{ chapter.title }}
+                </h2>
+                <ul class="card divide-y divide-ink-100 overflow-hidden dark:divide-ink-800">
+                  @for (lesson of chapter.lessons; track lesson.slug) {
+                    <li><app-lesson-row [lesson]="lesson" /></li>
+                  }
+                </ul>
+              }
+            </section>
+          }
         } @else {
           @for (group of groups(); track group.letter) {
             <section [id]="'letter-' + group.letter" class="mb-6 scroll-mt-32">

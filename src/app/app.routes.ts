@@ -3,17 +3,18 @@ import { COURSE } from './core/course/course';
 import { legacyLessonGuard, legacyQuizGuard, randomGuard } from './core/guards/course.guards';
 
 const SITE = COURSE.name;
+const GUIDED = COURSE.format === 'guided';
 
 export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./features/home/home').then((m) => m.Home),
-    title: `${SITE} · ${COURSE.subject} in 5-minute bites`,
+    title: GUIDED ? `${SITE} · ${COURSE.subject} step by step` : `${SITE} · ${COURSE.subject} in 5-minute bites`,
   },
   {
     path: 'lessons',
     loadComponent: () => import('./features/lessons/lessons').then((m) => m.LessonsPage),
-    title: `Lessons A–Z · ${SITE}`,
+    title: GUIDED ? `Lessons · ${SITE}` : `Lessons A–Z · ${SITE}`,
   },
   {
     path: 'lesson/:slug',

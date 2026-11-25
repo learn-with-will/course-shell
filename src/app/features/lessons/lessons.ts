@@ -18,13 +18,32 @@ import { SearchService } from '../../core/services/search.service';
 import { LessonRow } from '../../shared/components/lesson-row/lesson-row';
 import { LESSON_SEARCH_ID } from '../../shared/components/navbar/navbar';
 
-type SortMode = 'az' | 'unlearned' | 'shortest';
+type SortMode = 'path' | 'az' | 'unlearned' | 'shortest';
 
 const SORTS: { id: SortMode; label: string }[] = [
   { id: 'az', label: 'A–Z' },
   { id: 'unlearned', label: 'Not learned first' },
   { id: 'shortest', label: 'Shortest first' },
 ];
+
+/** Guided courses add "Course order" and make it the default. */
+const GUIDED_SORTS: { id: SortMode; label: string }[] = [{ id: 'path', label: 'Course order' }, ...SORTS];
+
+/** One chapter in the "Course order" view, with its lessons in path order. */
+interface ChapterGroup {
+  id: string;
+  number?: number;
+  title: string;
+  lessons: LessonMeta[];
+}
+
+/** One track in the "Course order" view. */
+interface TrackGroup {
+  id: string;
+  title: string;
+  blurb: string;
+  chapters: ChapterGroup[];
+}
 
 const LETTERS = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '#'];
 
@@ -48,7 +67,7 @@ export class LessonsPage {
   protected readonly kindLabels = KIND_LABELS;
   protected readonly kindHints = KIND_HINTS;
   protected readonly kindChips = KIND_CHIPS;
-  protected readonly sorts = SORTS;
+  protected readonly sorts = this.course.isGuided() ? GUIDED_SORTS : SORTS;
   protected readonly letters = LETTERS;
   protected readonly searchId = LESSON_SEARCH_ID;
 
@@ -64,9 +83,13 @@ export class LessonsPage {
     return k && KINDS.includes(k) ? k : null;
   });
 
+  /** The view shown without `?sort=`: course order for guided courses, A–Z otherwise. */
+  private readonly defaultSort = computed<SortMode>(() => (this.course.isGuided() ? 'path' : 'az'));
+
   protected readonly sort = computed<SortMode>(() => {
     const s = this.params().get('sort') as SortMode | null;
-    return SORTS.some((x) => x.id === s) ? (s as SortMode) : 'az';
+    const allowed = this.course.isGuided() ? GUIDED_SORTS : SORTS;
+    return allowed.some((x) => x.id === s) ? (s as SortMode) : this.defaultSort();
   });
 
   /** The old long lesson the learner was redirected from, if any. */
@@ -87,9 +110,10 @@ export class LessonsPage {
     const lessons = this.course.byTopic(topic.id);
     const done = lessons.filter((l) => l.slug in learned).length;
     const index = this.course.topics().findIndex((t) => t.id === topic.id);
+    const guided = this.course.isGuided() && topic.number !== undefined;
     return {
       topic,
-      number: String(index + 1).padStart(2, '0'),
+      label: guided ? `CHAPTER ${topic.number}` : `${String(index + 1).padStart(2, '0')} · TOPIC`,
       learned: done,
       total: lessons.length,
       pct: lessons.length === 0 ? 0 : Math.round((done / lessons.length) * 100),
@@ -128,7 +152,32 @@ export class LessonsPage {
   });
 
   /** True when results are a flat list (searching or a non-A–Z sort) rather than A–Z groups. */
-  protected readonly flat = computed(() => this.query().trim() !== '' || this.sort() !== 'az');
+  protected readonly flat = computed(
+    () => this.query().trim() !== '' || (this.sort() !== 'az' && this.sort() !== 'path'),
+  );
+
+  /** Tracks → chapters → lessons, for the "Course order" view (guided courses only). */
+  protected readonly trackGroups = computed<TrackGroup[]>(() => {
+    const shown = new Set(this.results().map((l) => l.slug));
+    return this.course
+      .tracks()
+      .map((track) => ({
+        id: track.id,
+        title: track.title,
+        blurb: track.blurb,
+        chapters: this.course
+          .topics()
+          .filter((t) => t.track === track.id)
+          .map((t) => ({
+            id: t.id,
+            number: t.number,
+            title: t.title,
+            lessons: this.course.byTopic(t.id).filter((l) => shown.has(l.slug)),
+          }))
+          .filter((c) => c.lessons.length > 0),
+      }))
+      .filter((t) => t.chapters.length > 0);
+  });
 
   protected readonly results = computed<LessonMeta[]>(() => {
     const base = this.filtered();
@@ -185,7 +234,7 @@ export class LessonsPage {
   }
 
   protected setSort(sort: SortMode): void {
-    this.navigate({ sort: sort === 'az' ? null : sort });
+    this.navigate({ sort: sort === this.defaultSort() ? null : sort });
   }
 
   protected clearFilters(): void {

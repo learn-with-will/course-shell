@@ -31,6 +31,9 @@ import { ProgressService } from '../../../core/services/progress.service';
           [routerLink]="['/lesson', lesson().slug]"
           class="block truncate font-semibold text-ink-900 outline-none transition-colors before:absolute before:inset-0 group-hover:text-brand-600 dark:text-white dark:group-hover:text-brand-300"
         >
+          @if (lesson().number) {
+            <span class="mr-1.5 font-mono text-xs font-semibold text-ink-500 dark:text-ink-400">{{ lesson().number }}</span>
+          }
           {{ lesson().title }}
         </a>
         <span class="prose-muted mt-0.5 block truncate text-sm">{{ lesson().summary }}</span>

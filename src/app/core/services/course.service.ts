@@ -39,6 +39,7 @@ export class CourseService {
 
   readonly isGuided = computed(() => this._manifest().format === 'guided');
   readonly path = computed<string[]>(() => this._manifest().path ?? []);
+  readonly tracks = computed(() => this._manifest().tracks ?? []);
 
   /** Topics that have at least one lesson, in display order. */
   readonly topics = computed(() => this._manifest().topics.filter((t) => t.count > 0));

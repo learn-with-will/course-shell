@@ -100,16 +100,41 @@ export class Home {
 
   protected readonly topicTiles = computed<TopicTile[]>(() => {
     const learned = this.progress.learned();
+    const guided = this.course.isGuided();
     return this.course.topics().map((topic, i) => {
       const done = this.course.byTopic(topic.id).filter((l) => l.slug in learned).length;
       return {
         topic,
-        number: String(i + 1).padStart(2, '0'),
+        number: guided && topic.number !== undefined ? `CH ${topic.number}` : String(i + 1).padStart(2, '0'),
         learned: done,
         pct: topic.count === 0 ? 0 : Math.round((done / topic.count) * 100),
       };
     });
   });
+
+  /** Guided courses: the next lesson on the path, i.e. the first one not learned yet. */
+  protected readonly nextLesson = computed(() =>
+    this.course.firstUnlearned(new Set(Object.keys(this.progress.learned()))),
+  );
+
+  /** Guided courses: true once any lesson is learned, so the button says "Continue". */
+  protected readonly started = computed(() => this.progress.learnedCount() > 0);
+
+  /** Tiles to show: under their track for guided courses, one untitled group otherwise. */
+  protected readonly tileGroups = computed<{ id: string; title: string | null; blurb: string; tiles: TopicTile[] }[]>(
+    () => {
+      if (!this.course.isGuided()) return [{ id: 'all', title: null, blurb: '', tiles: this.topicTiles() }];
+      return this.course
+        .tracks()
+        .map((track) => ({
+          id: track.id,
+          title: track.title,
+          blurb: track.blurb,
+          tiles: this.topicTiles().filter((t) => t.topic.track === track.id),
+        }))
+        .filter((g) => g.tiles.length > 0);
+    },
+  );
 
   protected readonly lastRound = computed(() => this.progress.sessions()[0]);
 
