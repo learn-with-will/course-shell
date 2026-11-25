@@ -16,9 +16,17 @@ export class LessonService {
     const raw = await firstValueFrom(
       this.http.get(`content/${meta.file}`, { responseType: 'text' }),
     );
-    const lesson: Lesson = { meta, content: this.stripFrontMatter(raw) };
+    const lesson: Lesson = { meta, content: this.resolveImages(this.stripFrontMatter(raw)) };
     this.cache.set(meta.slug, lesson);
     return lesson;
+  }
+
+  /**
+   * Lessons write `![alt](images/x.png)`, relative to the content folder; the
+   * site serves that folder at `content/`, so point the link there.
+   */
+  private resolveImages(markdown: string): string {
+    return markdown.replace(/(!\[[^\]]*\]\()images\//g, '$1content/images/');
   }
 
   /** Removes a leading `--- ... ---` YAML block if present. */

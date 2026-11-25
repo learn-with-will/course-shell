@@ -3,7 +3,8 @@
 //
 //   npm run validate -- ../my-course             # unfinished topics/legacy entries are warnings
 //   npm run validate -- ../my-course --strict    # release mode: they are errors (the deploy workflow)
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { checkCourseJson, coursePaths, normalizeCourse, readCourseJson } from './course-config.mjs';
 import { DIAGRAM_LANGS, maskFences, readJson, readLessonFiles } from './generate-manifest.mjs';
 import { parseDiagram } from '../src/app/shared/diagram/diagram-parser.ts';
@@ -19,6 +20,8 @@ const MAX_MINUTES = 5;
 const MIN_QUESTIONS_PER_TOPIC = 8;
 const QUESTION_TYPES = ['single-choice', 'multiple-choice', 'fill-blank', 'ordering', 'match-pair'];
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const IMAGE_EXTENSIONS = /\.(svg|png|jpe?g|webp)$/i;
+const MAX_IMAGE_BYTES = 200 * 1024;
 
 const GUIDED_KINDS = {
   concept: {
@@ -107,7 +110,7 @@ export function checkBiteBody({ where, body, stats, prose, teachesCode, allowedF
     );
 }
 
-export function checkGuidedLesson({ where, meta, body, stats, prose, teachesCode, allowedFences, topicById, trackById, fail }) {
+export function checkGuidedLesson({ where, meta, body, stats, prose, teachesCode, allowedFences, topicById, trackById, contentDir, fail }) {
   const kindDef = GUIDED_KINDS[meta.kind];
   if (!kindDef) {
     fail(where, `kind "${meta.kind}" not one of concept, task, build, troubleshoot`);
@@ -188,8 +191,22 @@ export function checkGuidedLesson({ where, meta, body, stats, prose, teachesCode
     }
   }
 
-  const images = [...body.matchAll(/!\[(.*?)\]\((.*?)\)/g)];
+  // Images live in content/images/ and are written `![alt](images/name.png)`.
+  const images = [...prose.matchAll(/!\[(.*?)\]\((.*?)\)/g)];
   if (images.length > 2) fail(where, `${images.length} images (max 2)`);
+  for (const [, alt, src] of images) {
+    if (!alt.trim()) fail(where, `image ${src} needs alt text: ![what it shows](${src})`);
+    if (!/^images\/[^/]+$/.test(src)) {
+      fail(where, `image ${src} must be a file in content/images/, written as images/<name>`);
+      continue;
+    }
+    if (!IMAGE_EXTENSIONS.test(src)) fail(where, `image ${src} must be .svg, .png, .jpg, .jpeg or .webp`);
+    const file = join(contentDir, src);
+    if (!existsSync(file)) fail(where, `image ${src} not found in content/images/`);
+    else if (statSync(file).size > MAX_IMAGE_BYTES) {
+      fail(where, `image ${src} is ${Math.round(statSync(file).size / 1024)} KB (max ${MAX_IMAGE_BYTES / 1024} KB)`);
+    }
+  }
 }
 
 /**
@@ -424,6 +441,7 @@ export function validateCourse(courseDir, { strict = false } = {}) {
         allowedFences,
         topicById,
         trackById,
+        contentDir: paths.content,
         fail,
       });
     } else {

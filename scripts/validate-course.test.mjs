@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { validateCourse } from './validate-course.mjs';
@@ -217,6 +217,35 @@ describe('validateCourse', () => {
           res.errors.some((e) => e.includes('only allowed in advanced tracks')),
           `Expected Going further track level error, got: ${res.errors.join(', ')}`,
         );
+      },
+    );
+  });
+
+  it('S12: accepts an image in content/images/ with alt text, and rejects a broken one', () => {
+    const addImage = (dir, markdown) => {
+      const file = join(dir, 'content', 'lessons', 'what-is-guided.md');
+      writeFileSync(file, readFileSync(file, 'utf8').replace('## How it works', `${markdown}\n\n## How it works`));
+    };
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>';
+
+    withTempCourse(
+      (dir) => {
+        mkdirSync(join(dir, 'content', 'images'));
+        writeFileSync(join(dir, 'content', 'images', 'flow.svg'), svg);
+        addImage(dir, '![A lesson flowing into the next](images/flow.svg)');
+      },
+      (dir) => {
+        const res = validateCourse(dir, { strict: true });
+        assert.equal(res.errors.length, 0, `Expected 0 errors, got: ${res.errors.join(', ')}`);
+      },
+    );
+
+    withTempCourse(
+      (dir) => addImage(dir, '![](images/missing.png)'),
+      (dir) => {
+        const res = validateCourse(dir, { strict: true });
+        assert.ok(res.errors.some((e) => e.includes('needs alt text')), res.errors.join(', '));
+        assert.ok(res.errors.some((e) => e.includes('not found in content/images/')), res.errors.join(', '));
       },
     );
   });

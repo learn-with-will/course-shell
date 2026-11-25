@@ -499,6 +499,37 @@ kbd {
   color: var(--dg-title);
 }
 
+/* Images in lessons (`![alt](images/x.png)`): never wider than the text column.
+   An italic paragraph right after an image is its caption. */
+.lesson-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem auto 0.5rem;
+  border: 1px solid var(--color-ink-200);
+  border-radius: 0.85rem;
+}
+.dark .lesson-content img {
+  border-color: var(--color-ink-800);
+}
+.lesson-content p:has(> img:only-child) {
+  margin-bottom: 0;
+}
+/* The caption on the next line (same paragraph) or after a blank line (next paragraph). */
+.lesson-content p > img + em {
+  display: block;
+  margin-top: 0.4rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-ink-500);
+}
+.lesson-content p:has(> img:only-child) + p:has(> em:only-child) {
+  margin-top: 0.4rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-ink-500);
+}
+
 /* "Watch out" and "Remember" lists become a stack of cards with a badge (! or 1, 2, 3).
    LessonPage.enhanceSections() adds .dg-list and a tone class to the list after those headings. */
 .lesson-content ul.dg-list {
