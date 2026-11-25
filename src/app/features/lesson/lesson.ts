@@ -49,6 +49,42 @@ const CALLOUTS: Record<string, string> = {
   'watch out': 'dg-tone-amber',
 };
 
+/**
+ * A first code line that only names the block's file, in the comment syntax of its language:
+ * `// src/app/app.ts`, `<!-- src/app/app.html -->`, a CSS block comment, or `# setup.sh`.
+ * An optional note in brackets follows the path: `// src/app/app.ts (changed parts)`.
+ */
+const FILE_COMMENT =
+  /^\s*(?:\/\/|<!--|\/\*|#)\s*((?:[\w.@-]+\/)*[\w.@-]+\.[a-z0-9]+)(?:\s+\(([^)]*)\))?\s*(?:-->|\*\/)?\s*$/i;
+
+const FILE_ICON =
+  '<svg class="code-tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">' +
+  '<path d="M4 1.75h5.5L13 5.25v9H4z"/><path d="M9.5 1.75v3.5H13"/></svg>';
+
+/** A code block on the page, with the file its first line named (if any). */
+interface CodeFile {
+  pre: HTMLPreElement;
+  code: HTMLElement;
+  path?: string;
+  note?: string;
+}
+
+let nextCodeGroup = 0;
+
+/** Removes the first `count` characters of an element's text, across nested highlight spans. */
+function dropLeadingText(root: Element, count: number): void {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let left = count;
+  for (let node = walker.nextNode() as Text | null; node && left > 0; node = walker.nextNode() as Text | null) {
+    const take = Math.min(left, node.data.length);
+    node.data = node.data.slice(take);
+    left -= take;
+  }
+  root.querySelectorAll('*').forEach((el) => {
+    if (!el.textContent) el.remove();
+  });
+}
+
 /** Section headings whose bullet list is drawn as a stack of cards, and how. */
 const LIST_SECTIONS: Record<string, string[]> = {
   'watch out': ['dg-list', 'dg-list-warn', 'dg-tone-amber'],
@@ -235,38 +271,145 @@ export class LessonPage {
     this.toc.set(entries);
   }
 
-  /** Adds a Copy button to every highlighted code block. */
+  /**
+   * Adds a Copy button to every highlighted code block. A block whose first line names
+   * its file loses that line and gets an editor-style tab with the file name instead.
+   * Code blocks with file names that follow each other directly (nothing written between
+   * them) become one block with a clickable tab per file, like an editor.
+   */
   private enhanceCode(root: Element): void {
+    const blocks: CodeFile[][] = [];
     root.querySelectorAll('pre').forEach((pre) => {
       if (pre.parentElement?.classList.contains('code-block')) return;
       const code = pre.querySelector('code');
       if (!code) return;
 
-      const wrapper = document.createElement('div');
-      wrapper.className = 'code-block';
-      pre.replaceWith(wrapper);
-      wrapper.appendChild(pre);
+      const firstLine = (code.textContent ?? '').split('\n', 1)[0];
+      const file = FILE_COMMENT.exec(firstLine);
+      if (file) dropLeadingText(code, firstLine.length + 1);
+      const item: CodeFile = { pre, code, path: file?.[1], note: file?.[2] };
 
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'code-copy';
-      button.textContent = 'Copy';
-      button.setAttribute('aria-label', 'Copy code to clipboard');
-      button.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(code.textContent ?? '');
-          button.textContent = 'Copied';
-          button.setAttribute('data-copied', '');
-        } catch {
-          button.textContent = 'Press Ctrl+C';
-        }
-        setTimeout(() => {
-          button.textContent = 'Copy';
-          button.removeAttribute('data-copied');
-        }, 1600);
-      });
-      wrapper.appendChild(button);
+      const run = blocks.at(-1);
+      const last = run?.at(-1);
+      if (run && last?.path && item.path && last.pre.nextElementSibling === pre) run.push(item);
+      else blocks.push([item]);
     });
+    blocks.forEach((files) => this.buildCodeBlock(files));
+  }
+
+  /** Wraps one or more code blocks (the files of one group) in a single panel. */
+  private buildCodeBlock(files: CodeFile[]): void {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-block';
+    files[0].pre.replaceWith(wrapper);
+
+    let active = 0;
+    const copy = this.copyButton(() => files[active].code.textContent ?? '');
+
+    if (!files[0].path) {
+      wrapper.append(files[0].pre, copy);
+      return;
+    }
+
+    wrapper.classList.add('has-tab');
+    const bar = document.createElement('div');
+    bar.className = 'code-tabbar';
+    const strip = document.createElement('div');
+    strip.className = 'code-tabs';
+    bar.append(strip, copy);
+    wrapper.appendChild(bar);
+
+    if (files.length === 1) {
+      strip.appendChild(this.codeTab('div', files[0]));
+      wrapper.appendChild(files[0].pre);
+      return;
+    }
+
+    // Several files: a tab list, one panel per file, only the chosen one visible.
+    const groupId = `code-${nextCodeGroup++}`;
+    strip.setAttribute('role', 'tablist');
+    strip.setAttribute('aria-label', 'Files');
+    const tabs = files.map((file, i) => {
+      const tab = this.codeTab('button', file) as HTMLButtonElement;
+      tab.type = 'button';
+      tab.id = `${groupId}-tab-${i}`;
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-controls', `${groupId}-panel-${i}`);
+      file.pre.id = `${groupId}-panel-${i}`;
+      file.pre.setAttribute('role', 'tabpanel');
+      file.pre.setAttribute('aria-labelledby', tab.id);
+      file.pre.setAttribute('tabindex', '0');
+      strip.appendChild(tab);
+      wrapper.appendChild(file.pre);
+      return tab;
+    });
+
+    const select = (index: number, focus = false): void => {
+      active = index;
+      tabs.forEach((tab, i) => {
+        const on = i === index;
+        tab.setAttribute('aria-selected', String(on));
+        tab.tabIndex = on ? 0 : -1;
+        tab.classList.toggle('is-active', on);
+        files[i].pre.hidden = !on;
+      });
+      if (focus) tabs[index].focus();
+    };
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => select(i));
+      tab.addEventListener('keydown', (event) => {
+        const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+        if (!step) return;
+        event.preventDefault();
+        select((i + step + tabs.length) % tabs.length, true);
+      });
+    });
+    select(0);
+  }
+
+  /** A Copy button that copies whatever `text()` returns at the time of the click. */
+  private copyButton(text: () => string): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'code-copy';
+    button.textContent = 'Copy';
+    button.setAttribute('aria-label', 'Copy code to clipboard');
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(text());
+        button.textContent = 'Copied';
+        button.setAttribute('data-copied', '');
+      } catch {
+        button.textContent = 'Press Ctrl+C';
+      }
+      setTimeout(() => {
+        button.textContent = 'Copy';
+        button.removeAttribute('data-copied');
+      }, 1600);
+    });
+    return button;
+  }
+
+  /** One editor tab: file icon, file name, then its folder and any note, muted. */
+  private codeTab(tag: 'div' | 'button', file: CodeFile): HTMLElement {
+    const path = file.path ?? '';
+    const slash = path.lastIndexOf('/');
+    const tab = document.createElement(tag);
+    tab.className = 'code-tab';
+    tab.setAttribute('title', file.note ? `${path} (${file.note})` : path);
+    tab.innerHTML = FILE_ICON;
+    const name = document.createElement('span');
+    name.className = 'code-tab-name';
+    name.textContent = path.slice(slash + 1);
+    tab.appendChild(name);
+    const meta = [slash > 0 ? path.slice(0, slash) : '', file.note ?? ''].filter(Boolean).join(' · ');
+    if (meta) {
+      const muted = document.createElement('span');
+      muted.className = 'code-tab-meta';
+      muted.textContent = meta;
+      tab.appendChild(muted);
+    }
+    return tab;
   }
 
   protected scrollToSection(event: Event, id: string): void {
@@ -317,14 +460,30 @@ export class LessonPage {
     });
   }
 
-  /** Tags `> **In one line:** …`, `> **Tip:** …` etc. so CSS can colour them. */
+  /**
+   * Tags `> **In one line:** …`, `> **Tip:** …`, `> **Key idea:** …`,
+   * `> **You might think:** … / **Actually:** …` etc. so CSS can style them.
+   */
   private enhanceCallouts(root: Element): void {
     root.querySelectorAll('blockquote').forEach((quote) => {
       const lead = quote.firstElementChild?.firstElementChild;
       if (lead?.tagName !== 'STRONG') return;
       const label = (lead.textContent ?? '').replace(/[:.]\s*$/, '').trim().toLowerCase();
       const cls = CALLOUTS[label];
-      if (cls) {
+      if (label === 'key idea') {
+        // The one sentence to remember from a section, drawn large.
+        quote.classList.add('callout', 'callout-key');
+      } else if (label === 'you might think') {
+        // A common belief next to what is really true:
+        // `> **You might think:** …` then `> **Actually:** …` in the same quote.
+        quote.classList.add('callout-myth');
+        quote.querySelectorAll(':scope > p').forEach((p) => {
+          const tag = (p.firstElementChild?.tagName === 'STRONG' ? p.firstElementChild.textContent : '') ?? '';
+          const which = tag.replace(/[:.]\s*$/, '').trim().toLowerCase();
+          if (which === 'you might think') p.classList.add('myth-belief', 'dg-tone-amber');
+          else if (which === 'actually') p.classList.add('myth-truth', 'dg-tone-green');
+        });
+      } else if (cls) {
         quote.classList.add('callout', cls);
       } else if (this.course.isGuided()) {
         // Guided lessons define a new term as `> **Term:** definition`.

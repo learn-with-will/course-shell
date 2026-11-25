@@ -167,4 +167,41 @@ Where the user starts
       expect(diagramText(s)).toEqual(['A', 'first', 'B', 'go']);
     });
   });
+
+  describe('step by step (@steps)', () => {
+    it('marks a sequence as stepped and attaches captions to the step above', () => {
+      const s = parse<SequenceSpec>(
+        'sequence',
+        '@steps\nactor u: User\nactor a: App\nu -> a: Clicks\n= The user clicks Add.\na --> u: Updates',
+      );
+      expect(s.stepped).toBeTrue();
+      expect(s.steps[0].caption).toBe('The user clicks Add.');
+      expect(s.steps[1].caption).toBeUndefined();
+    });
+
+    it('marks a flow as stepped and attaches captions to edges', () => {
+      const s = parse<FlowSpec>('flow', '@steps\na: A\nb: B\nc: C\na -> b\n= First\nb -> c: then\n= Second');
+      expect(s.stepped).toBeTrue();
+      expect(s.edges.map((e) => e.caption)).toEqual(['First', 'Second']);
+    });
+
+    it('leaves a diagram without @steps unstepped', () => {
+      expect(parse<FlowSpec>('flow', 'a: A\nb: B\na -> b').stepped).toBeUndefined();
+      expect(parse<SequenceSpec>('sequence', 'actor u: U\nactor a: A\nu -> a: hi').stepped).toBeUndefined();
+    });
+
+    it('rejects misplaced markers', () => {
+      expect(failure('flow', 'a: A\n@steps\nb: B\na -> b').message).toContain('"@steps" must be the first line');
+      expect(failure('flow', 'a: A\nb: B\na -> b\n= x').message).toContain('needs "@steps"');
+      expect(failure('flow', '@steps\na: A\n= x\nb: B\na -> b').message).toContain('not a node');
+      expect(failure('sequence', '@steps\nactor u: U\n= x\nactor a: A\nu -> a: hi').message).toContain('not an actor');
+      expect(failure('flow', '@steps\na: A\nb: B\na -> b\n= x\n= y').message).toContain('one caption per step');
+      expect(failure('tree', '@steps\nRoot\n  Child').message).toContain('not trees');
+    });
+
+    it('counts captions as readable text', () => {
+      const s = parseDiagram('flow', '@steps\na: A\nb: B\na -> b: go\n= Then it goes');
+      expect(diagramText(s)).toContain('Then it goes');
+    });
+  });
 });

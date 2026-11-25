@@ -28,7 +28,12 @@ import { DiagramText } from './diagram-text';
       </div>
 
       @for (step of spec().steps; track step.n) {
-        <div class="dg-seq-grid dg-seq-row">
+        <div
+          class="dg-seq-grid dg-seq-row"
+          [class.dg-step-hidden]="step.n > shown()"
+          [class.dg-step-current]="step.n === shown()"
+          [attr.aria-hidden]="step.n > shown() ? 'true' : null"
+        >
           <span class="dg-seq-num" aria-label="Step {{ step.n }}">{{ step.n }}</span>
           <div class="dg-seq-lane">
             @for (x of lifelines(); track $index) {
@@ -70,6 +75,8 @@ import { DiagramText } from './diagram-text';
 })
 export class DiagramSequence {
   readonly spec = input.required<SequenceSpec>();
+  /** Steps numbered above this are hidden (a stepped diagram); Infinity shows them all. */
+  readonly shown = input(Infinity);
 
   private readonly count = computed(() => this.spec().actors.length);
 

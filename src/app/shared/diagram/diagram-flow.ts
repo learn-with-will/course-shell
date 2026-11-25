@@ -1,8 +1,10 @@
-import { Component, DestroyRef, ElementRef, afterNextRender, inject, input, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, signal, viewChild } from '@angular/core';
 import { FlowSpec } from './diagram-parser';
 import { DiagramText } from './diagram-text';
 
 interface EdgePath {
+  /** Position of the edge in the source, which is also its step number minus one. */
+  index: number;
   d: string;
   label?: string;
   x: number;
@@ -25,7 +27,13 @@ let nextId = 0;
         @for (layer of spec().layers; track $index) {
           <div class="dg-flow-col">
             @for (node of layer; track node.id) {
-              <div class="dg-card" [class]="'dg-tone-' + node.tone" [attr.data-node]="node.id">
+              <div
+                class="dg-card"
+                [class]="'dg-tone-' + node.tone"
+                [class.dg-step-hidden]="!visibleNodes().has(node.id)"
+                [attr.aria-hidden]="visibleNodes().has(node.id) ? null : 'true'"
+                [attr.data-node]="node.id"
+              >
                 <div class="dg-title"><app-dg-text [text]="node.title" /></div>
                 @if (node.subtitle) {
                   <div class="dg-sub"><app-dg-text [text]="node.subtitle" /></div>
@@ -42,11 +50,13 @@ let nextId = 0;
             <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
           </marker>
         </defs>
-        @for (edge of edges(); track $index) {
-          <path [attr.d]="edge.d" class="dg-edge" [attr.marker-end]="'url(#' + markerId + ')'" />
-          @if (edge.label) {
-            <text class="dg-edge-label" [attr.x]="edge.x" [attr.y]="edge.y">{{ edge.label }}</text>
-          }
+        @for (edge of edges(); track edge.index) {
+          <g [class.dg-step-hidden]="edge.index >= shown()" [class.dg-step-current]="edge.index === shown() - 1">
+            <path [attr.d]="edge.d" class="dg-edge" [attr.marker-end]="'url(#' + markerId + ')'" />
+            @if (edge.label) {
+              <text class="dg-edge-label" [attr.x]="edge.x" [attr.y]="edge.y">{{ edge.label }}</text>
+            }
+          </g>
         }
       </svg>
     </div>
@@ -54,6 +64,18 @@ let nextId = 0;
 })
 export class DiagramFlow {
   readonly spec = input.required<FlowSpec>();
+  /** Edges from this index on are hidden (a stepped diagram); Infinity shows them all. */
+  readonly shown = input(Infinity);
+
+  /** Nodes touched by a visible edge. Every node shows when the diagram is not stepped. */
+  protected readonly visibleNodes = computed(() => {
+    const spec = this.spec();
+    const shown = this.shown();
+    if (shown === Infinity) return new Set(spec.layers.flat().map((n) => n.id));
+    const ids = new Set<string>();
+    spec.edges.slice(0, shown).forEach((e) => ids.add(e.from).add(e.to));
+    return ids;
+  });
 
   protected readonly markerId = `dg-arrow-${nextId++}`;
   protected readonly edges = signal<EdgePath[]>([]);
@@ -78,7 +100,7 @@ export class DiagramFlow {
       root.querySelector(`[data-node="${id}"]`)?.getBoundingClientRect();
 
     const paths: EdgePath[] = [];
-    for (const edge of this.spec().edges) {
+    for (const [index, edge] of this.spec().edges.entries()) {
       const a = box(edge.from);
       const b = box(edge.to);
       if (!a || !b) continue;
@@ -89,6 +111,7 @@ export class DiagramFlow {
       const y2 = b.top + b.height / 2 - origin.top;
       const bend = Math.max(24, (x2 - x1) / 2);
       paths.push({
+        index,
         d: `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`,
         label: edge.label,
         x: (x1 + x2) / 2,

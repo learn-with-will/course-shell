@@ -300,6 +300,100 @@ kbd {
 .code-block {
   position: relative;
 }
+/* A code block whose first line names its file (`// src/app/app.ts`) gets an editor-style tab. */
+.lesson-content .code-block.has-tab {
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border: 1px solid #120e1c;
+  border-radius: 1rem;
+  background: #120e1c;
+}
+.dark .lesson-content .code-block.has-tab {
+  border-color: var(--color-ink-800);
+}
+.lesson-content .code-block.has-tab > pre[class*='language-'] {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.code-tabbar {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding-right: 0.45rem;
+  background: #0b0812;
+  border-bottom: 1px solid #241c33;
+}
+.code-block pre[hidden] {
+  display: none !important;
+}
+.code-tabs {
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.code-tab {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0 1rem;
+  border: 0;
+  border-top: 2px solid var(--color-brand-500);
+  background: #120e1c;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #e7e3f4;
+}
+/* Tabs of a group: only the chosen one looks like the open file. */
+button.code-tab {
+  border-top-color: transparent;
+  border-right: 1px solid #241c33;
+  background: transparent;
+  color: #8a83a3;
+  cursor: pointer;
+}
+button.code-tab:hover {
+  color: #e7e3f4;
+}
+button.code-tab.is-active {
+  border-top-color: var(--color-brand-500);
+  background: #120e1c;
+  color: #e7e3f4;
+}
+button.code-tab:not(.is-active) .code-tab-meta {
+  display: none;
+}
+button.code-tab:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: -2px;
+}
+.code-tab-icon {
+  flex: none;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: #a59fbd;
+}
+.code-tab-name {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.code-tab-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #8a83a3;
+}
+.code-tabbar .code-copy {
+  position: static;
+  align-self: center;
+  min-height: 1.75rem;
+}
 .code-copy {
   position: absolute;
   top: 0.6rem;
@@ -598,7 +692,7 @@ kbd {
   display: block;
   margin: 1.5rem 0;
   padding: 1.25rem;
-  overflow-x: auto;
+  overflow-x: hidden;
   border: 1px solid var(--dg-border);
   border-radius: 1rem;
   background: var(--dg-surface);
@@ -948,4 +1042,174 @@ kbd {
 .lesson-content blockquote.callout.dg-tone-primary :not(pre) > code {
   background: #2a2238;
   color: #ffffff;
+}
+
+/* ---------------------------------------------------------------------------
+   Emphasis callouts (guided lessons)
+   `> **Key idea:** …` — the one sentence to remember from a section, drawn large (the label is hidden);
+   other bold words in it are picked out in the accent colour.
+   `> **You might think:** …` + `> **Actually:** …` — a common belief next to the truth.
+--------------------------------------------------------------------------- */
+.lesson-content blockquote.callout-key {
+  padding: 1rem 1.2rem 1.05rem;
+  border-width: 0 0 0 4px;
+  border-radius: 0.5rem 0.85rem 0.85rem 0.5rem;
+  font-family: var(--font-display, inherit);
+  font-size: 1.22rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+.lesson-content blockquote.callout-key > p:first-child > strong:first-child {
+  /* The "Key idea:" label marks the callout in markdown; readers see only the sentence. */
+  display: none;
+}
+.lesson-content blockquote.callout-key {
+  --t-border: var(--color-brand-600);
+  --t-bg: color-mix(in srgb, var(--color-brand-600) 7%, transparent);
+}
+.dark .lesson-content blockquote.callout-key {
+  --t-border: var(--color-brand-400);
+  --t-bg: color-mix(in srgb, var(--color-brand-400) 12%, transparent);
+}
+.lesson-content blockquote.callout-key strong:not(:first-child) {
+  color: var(--color-brand-600);
+  font-weight: 800;
+}
+.dark .lesson-content blockquote.callout-key strong:not(:first-child) {
+  color: var(--color-brand-400);
+}
+.lesson-content blockquote.callout-key code {
+  font-size: 0.9em;
+}
+
+.lesson-content blockquote.callout-myth {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1.25rem 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-style: normal;
+}
+@media (min-width: 40rem) {
+  .lesson-content blockquote.callout-myth {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.lesson-content blockquote.callout-myth > p {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--t-border);
+  border-radius: 0.85rem;
+  background: var(--t-bg);
+  color: var(--dg-title);
+}
+.lesson-content blockquote.callout-myth > p > strong:first-child {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.lesson-content blockquote.callout-myth > p.myth-belief > strong:first-child::before {
+  content: '✗ ';
+}
+.lesson-content blockquote.callout-myth > p.myth-truth > strong:first-child::before {
+  content: '✓ ';
+}
+.lesson-content blockquote.callout-myth > p.myth-belief {
+  text-decoration-color: color-mix(in srgb, var(--t-border) 70%, transparent);
+}
+
+/* The drawing scrolls sideways on narrow screens; the step controls below it do not. */
+.dg-canvas {
+  overflow-x: auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Step-by-step diagrams (`@steps`)
+--------------------------------------------------------------------------- */
+.dg .dg-step-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+.dg.dg-stepped .dg-seq-row,
+.dg.dg-stepped .dg-card,
+.dg.dg-stepped .dg-flow-edges g {
+  transition:
+    opacity 0.35s ease,
+    visibility 0.35s;
+}
+.dg .dg-seq-row.dg-step-current .dg-seq-num {
+  border-color: var(--color-brand-600, #dd0031);
+  background: var(--color-brand-600, #dd0031);
+  color: #fff;
+}
+.dg .dg-seq-row.dg-step-current .dg-seq-arrow {
+  border-top-width: 2.5px;
+}
+.dg .dg-flow-edges g.dg-step-current .dg-edge {
+  stroke-width: 2.5px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dg.dg-stepped .dg-seq-row,
+  .dg.dg-stepped .dg-card,
+  .dg.dg-stepped .dg-flow-edges g {
+    transition: none;
+  }
+}
+.dg-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-top: 0.9rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--dg-border);
+}
+.dg-step-caption {
+  flex: 1 1 16rem;
+  min-height: 2.6rem;
+  margin: 0;
+  color: var(--dg-title);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.dg-step-count {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--dg-sub);
+}
+.dg-step-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+.dg-step-btn {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--dg-border);
+  border-radius: 0.6rem;
+  background: var(--dg-surface);
+  color: var(--dg-title);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dg-step-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.dg-step-btn.dg-step-next {
+  border-color: transparent;
+  background: var(--color-brand-600, #dd0031);
+  color: #fff;
+}
+.dg-step-btn:focus-visible {
+  outline: 2px solid var(--color-brand-600, #dd0031);
+  outline-offset: 2px;
 }

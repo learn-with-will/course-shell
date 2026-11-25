@@ -36,6 +36,13 @@
 //   price -> total
 //   total -> view: re-renders                           (optional edge label)
 //   view: Template | reads total() @green
+//
+// Step by step (sequence and flow) — the reader reveals the diagram one step at a time
+//   @steps                                              (first line: turn the mode on)
+//   app -> api: Sends the request
+//   = The browser asks the server for the menu.         (caption for the step above)
+// In a sequence each arrow or note is a step; in a flow each edge is a step, and a node
+// appears with the first edge that touches it. Captions are allowed only with @steps.
 
 export const DIAGRAM_KINDS = ['sequence', 'tree', 'flow'] as const;
 export type DiagramKind = (typeof DIAGRAM_KINDS)[number];
@@ -66,6 +73,8 @@ export interface SequenceMessage {
   title: string;
   subtitle?: string;
   dashed: boolean;
+  /** Shown under the diagram while this step is the current one (`@steps` only). */
+  caption?: string;
 }
 
 export interface SequenceNote {
@@ -77,12 +86,15 @@ export interface SequenceNote {
   title: string;
   subtitle?: string;
   tone: Tone;
+  caption?: string;
 }
 
 export interface SequenceSpec {
   type: 'sequence';
   actors: SequenceActor[];
   steps: (SequenceMessage | SequenceNote)[];
+  /** `@steps`: the reader reveals one step at a time. */
+  stepped?: boolean;
 }
 
 export interface TreeNode {
@@ -111,6 +123,7 @@ export interface FlowEdge {
   from: string;
   to: string;
   label?: string;
+  caption?: string;
 }
 
 export interface FlowSpec {
@@ -118,6 +131,8 @@ export interface FlowSpec {
   /** Columns, left to right; each holds its nodes top to bottom. */
   layers: FlowNode[][];
   edges: FlowEdge[];
+  /** `@steps`: the reader reveals one edge at a time. */
+  stepped?: boolean;
 }
 
 export type DiagramSpec = SequenceSpec | TreeSpec | FlowSpec;
@@ -173,6 +188,7 @@ export function diagramText(spec: DiagramSpec): string[] {
   if (spec.type === 'sequence') {
     spec.actors.forEach((a) => add(a.title, a.subtitle));
     spec.steps.forEach((s) => add(s.title, s.subtitle));
+    spec.steps.forEach((s) => add(s.caption));
   } else if (spec.type === 'tree') {
     const walk = (n: TreeNode): void => {
       add(n.title, n.subtitle);
@@ -182,6 +198,7 @@ export function diagramText(spec: DiagramSpec): string[] {
   } else {
     spec.layers.flat().forEach((n) => add(n.title, n.subtitle));
     spec.edges.forEach((e) => add(e.label));
+    spec.edges.forEach((e) => add(e.caption));
   }
   return out;
 }
@@ -227,6 +244,45 @@ function significantLines(source: string): [number, string][] {
   return out;
 }
 
+/**
+ * Reads the step-by-step markers shared by sequence and flow: an `@steps` line before
+ * anything else, and `= caption` lines that belong to the step right above them.
+ * Returns the remaining lines, each with the index of the captions that follow it.
+ */
+interface StepLines {
+  stepped: boolean;
+  lines: [number, string][];
+  /** captions[i] = caption for lines[i] (only for lines that are followed by `= …`). */
+  captions: Map<number, string>;
+}
+
+function readStepLines(source: string): StepLines {
+  const all = significantLines(source);
+  let stepped = false;
+  const lines: [number, string][] = [];
+  const captions = new Map<number, string>();
+  all.forEach(([line, text], i) => {
+    const t = text.trim();
+    if (t === '@steps') {
+      if (i !== 0) throw new DiagramError('"@steps" must be the first line', line);
+      stepped = true;
+      return;
+    }
+    if (t.startsWith('=')) {
+      const caption = t.slice(1).trim();
+      if (!stepped) throw new DiagramError('a "= caption" line needs "@steps" on the first line', line);
+      if (!caption) throw new DiagramError('empty caption', line);
+      if (!lines.length) throw new DiagramError('a caption must follow a step', line);
+      const owner = lines.length - 1;
+      if (captions.has(owner)) throw new DiagramError('one caption per step', line);
+      captions.set(owner, caption);
+      return;
+    }
+    lines.push([line, text]);
+  });
+  return { stepped, lines, captions };
+}
+
 // ---------------------------------------------------------------------------
 // sequence
 
@@ -239,12 +295,15 @@ function parseSequence(source: string): SequenceSpec {
     return i;
   };
 
-  for (const [line, text] of significantLines(source)) {
+  const { stepped, lines, captions } = readStepLines(source);
+  for (const [index, [line, text]] of lines.entries()) {
     const t = text.trim();
+    const caption = captions.get(index);
 
     const actor = new RegExp(`^actor\\s+(${ID})\\s*:\\s*(.+)$`).exec(t);
     if (actor) {
       if (steps.length) throw new DiagramError('declare every actor before the first step', line);
+      if (caption) throw new DiagramError('a caption must follow an arrow or a note, not an actor', line);
       if (actors.some((a) => a.id === actor[1])) throw new DiagramError(`duplicate actor "${actor[1]}"`, line);
       const p = parseParts(actor[2], line);
       actors.push({ id: actor[1], title: p.title, subtitle: p.subtitle, tone: p.tone ?? 'neutral' });
@@ -264,6 +323,7 @@ function parseSequence(source: string): SequenceSpec {
         title: p.title,
         subtitle: p.subtitle,
         tone: p.tone ?? 'neutral',
+        caption,
       });
       continue;
     }
@@ -275,7 +335,16 @@ function parseSequence(source: string): SequenceSpec {
       if (from === to) throw new DiagramError('an arrow needs two different actors (use "note" for a single actor)', line);
       const p = parseParts(msg[4], line);
       if (p.tone) throw new DiagramError('arrows cannot take a tone; use a note', line);
-      steps.push({ kind: 'message', n: steps.length + 1, from, to, title: p.title, subtitle: p.subtitle, dashed: msg[2] === '-->' });
+      steps.push({
+        kind: 'message',
+        n: steps.length + 1,
+        from,
+        to,
+        title: p.title,
+        subtitle: p.subtitle,
+        dashed: msg[2] === '-->',
+        caption,
+      });
       continue;
     }
 
@@ -286,7 +355,7 @@ function parseSequence(source: string): SequenceSpec {
   if (actors.length > MAX_ACTORS) throw new DiagramError(`${actors.length} actors (max ${MAX_ACTORS})`, 0);
   if (steps.length === 0) throw new DiagramError('a sequence needs at least one step', 0);
   if (steps.length > MAX_STEPS) throw new DiagramError(`${steps.length} steps (max ${MAX_STEPS})`, 0);
-  return { type: 'sequence', actors, steps };
+  return stepped ? { type: 'sequence', actors, steps, stepped } : { type: 'sequence', actors, steps };
 }
 
 // ---------------------------------------------------------------------------
@@ -298,6 +367,7 @@ function parseTree(source: string): TreeSpec {
   let count = 0;
 
   for (const [line, text] of significantLines(source)) {
+    if (text.trim() === '@steps') throw new DiagramError('"@steps" works with sequence and flow diagrams, not trees', line);
     if (/^\t/.test(text)) throw new DiagramError('indent with spaces, not tabs', line);
     const indent = text.length - text.trimStart().length;
     if (indent % 2 !== 0) throw new DiagramError('indent in steps of two spaces', line);
@@ -348,15 +418,17 @@ function parseFlow(source: string): FlowSpec {
   const edgeRe = new RegExp(`^(${ID})\\s*->\\s*(${ID})\\s*(?::\\s*(.+))?$`);
   const nodeRe = new RegExp(`^(${ID})\\s*:\\s*(.+)$`);
 
-  for (const [line, text] of significantLines(source)) {
+  const { stepped, lines, captions } = readStepLines(source);
+  for (const [index, [line, text]] of lines.entries()) {
     const t = text.trim();
     const e = edgeRe.exec(t);
     if (e) {
-      edges.push({ from: e[1], to: e[2], label: e[3]?.trim() || undefined, line });
+      edges.push({ from: e[1], to: e[2], label: e[3]?.trim() || undefined, caption: captions.get(index), line });
       continue;
     }
     const n = nodeRe.exec(t);
     if (n) {
+      if (captions.has(index)) throw new DiagramError('a caption must follow an edge ("a -> b"), not a node', line);
       if (nodes.some((x) => x.id === n[1])) throw new DiagramError(`duplicate node "${n[1]}"`, line);
       const p = parseParts(n[2], line);
       nodes.push({ id: n[1], title: p.title, subtitle: p.subtitle, tone: p.tone ?? 'neutral' });
@@ -396,9 +468,11 @@ function parseFlow(source: string): FlowSpec {
     const l = layer(n.id);
     (layers[l] ??= []).push(n);
   }
-  return {
+  const spec: FlowSpec = {
     type: 'flow',
     layers: layers.filter(Boolean),
-    edges: edges.map(({ from, to, label }) => ({ from, to, label })),
+    edges: edges.map(({ from, to, label, caption }) => (caption ? { from, to, label, caption } : { from, to, label })),
   };
+  if (stepped) spec.stepped = true;
+  return spec;
 }
