@@ -1,194 +1,242 @@
-# Moving a course onto the shell
+# Moving a course to the guided format
 
-How to turn one of the older courses (its own copy of the React, Vue or Express shell, 24 long
-lessons in `beginner / intermediate / advanced`, one quiz file per lesson) into a content-only
-course that this shell builds. The same steps, minus the conversion, start a brand-new course.
+How to rebuild a course in the **guided** format: short lessons on an ordered path, written for
+beginners. The writing rules are in [CONTENT_GUIDE.md → Guided format](CONTENT_GUIDE.md#guided-format);
+this file is the procedure. It is written for a person or a coding agent to follow top to bottom.
+Every step ends with a **Done when** line; do not start the next step before it holds.
 
-It is written so that a person or a coding agent can follow it top to bottom. `<course>` is the
-repository name (`react`, `redis`, …) and all `npm` commands run from the `course-shell` folder.
+`<course>` is the repository name (`react`, `redis`, …). All `npm` commands run from the
+`course-shell` folder, with the course folder as the argument. The Angular course is the worked
+example for every step: its course pack is `angular/revamp/` and its branch `revamp/pilot`.
 
-## What changes, and what must not
+## Where you start from
 
-| | Before | After |
-|---|---|---|
-| Interface code | A full app copied into the course repository | None. The shell is checked out at build time |
-| Lessons | 24 long lessons (15–25 min) in three levels | Bites: one idea, 3–5 minutes, grouped by topic |
-| Quizzes | `public/quizzes/lesson-NN.json`, one per lesson | One bank, `quiz/questions.json`, tagged by topic |
-| Settings | Edited in source files (`index.css`, Navbar, `index.html`) | `course.json` |
-| Sign-in and cloud progress | Not available | Included |
+| | Group A: a bites course | Group B: an old course with its own app | Group C: a new course |
+|---|---|---|---|
+| Looks like | `course.json`, `content/lessons/*.md` (bites), `quiz/questions.json` | `package.json`, `src/`, 24 long lessons in `public/content/`, one quiz file per lesson | An empty repository and a prompt in `learning-portal/prompts/` |
+| Content source | The committed bites | The long lessons and `public/quizzes/` | Primary sources only |
+| Repository change | None | Becomes content-only ([step R0.4](#r0-prepare-the-repository)) | Start from `examples/guided-course` |
+| `from` column in the outline | Old bite slugs | Old lesson id and section, e.g. `lesson-07 §Examples` | Empty |
+| `aliases` | Old slugs merged into or renamed to this lesson | None | None |
+| `content/legacy.json` | Rewrite its `lessons` to the new slugs | Create it: each old long lesson → the new lessons that replaced it | None |
+| Progress kept by | `aliases` and `legacy.json` | `legacy.json` | — |
 
-Three things must survive the move, and `content/legacy.json` plus an unchanged `id` are what
-keep them:
+For group C, `prompts/new-course-prompt.md` in the `learning-portal` folder (not in this
+repository) is the procedure; it follows the same steps without the parts about old content.
+
+## What must survive
 
 - **The URL.** The course stays at `https://learn-with-will.github.io/<course>/`.
-- **Old links.** `/lesson/<old-slug>` redirects to the bites that replaced that lesson.
-- **Learners' progress.** The old shell saved completed lessons under the browser key
-  `<course>-learning-progress`, by lesson id (`lesson-07`). The new shell reads that key once
-  and marks the replacing bites as learned.
+- **The `id` in `course.json`.** It names the saved progress. Never change it.
+- **Old links.** An old lesson address must open the lesson that replaced it: through `aliases`
+  (old bite slugs) or `legacy.json` (old long lessons).
+- **Learners' progress.** On load, the shell moves progress saved under an alias to the new slug,
+  and reads the old long-lesson shell's progress once through `legacy.json`.
 
-## Before you start
+## The course pack
 
-1. Read [CONTENT_GUIDE.md](CONTENT_GUIDE.md) and the three lessons in
-   [`examples/demo-course`](examples/demo-course). They are the format you are converting to.
-2. Check what already exists remotely. A course may have unmerged work on another branch:
+Each course keeps its own plan in a `revamp/` folder, committed on the revamp branch:
 
-   ```bash
-   git -C ../<course> fetch --all --prune
-   git -C ../<course> ls-remote --heads origin
+| File | Required | What it holds |
+|---|---|---|
+| `DIAGNOSIS.md` | yes | What is wrong with the old course, with numbers and quoted examples (R1) |
+| `OUTLINE.md` | yes | Tracks, chapters, lessons, slugs, kinds, aliases, sources. **The only source** of the course structure |
+| `BRIEFS.md` | yes | For each lesson of the chapter being written: goal, key points, checked facts (R4) |
+| `SAMPLE_LESSON.md` | no | One finished lesson to fix the voice (required for a pilot course) |
+| `FEEDBACK.md` | yes | The owner's comments at each review, and what was done about them |
+
+### `OUTLINE.md` format
+
+```markdown
+# Outline: <Course name>
+
+<Old source (commit), example setting, track/chapter/lesson totals, target learner.>
+
+## Chặng · <Title> (<optional translated name>)
+
+`track: <id>` · `level: beginner|intermediate|advanced` · blurb: <one English sentence>
+
+<What the learner can do at the end of the track.>
+
+### Chương <n> · <Title>
+
+`topic: <id>` · blurb: <one English sentence>
+
+| # | Title | slug | kind | aliases | from | notes |
+|---|---|---|---|---|---|---|
+| 1.1 | What is Angular? | `what-is-angular` | concept | — | `what-is-angular` | Rewrite |
+```
+
+- `#` is `<chapter>.<lesson>`; the order of the rows is the reading order.
+- `slug`: keep the old slug when the lesson matches one old lesson or merges several; give a new,
+  short slug (≤ 40 characters) for a new or split lesson, or when the old slug misleads (a
+  `pitfall-…` slug for a lesson that teaches the right way).
+- `aliases`: every old slug merged into or renamed to this lesson. A slug only *partly* reused
+  elsewhere is not an alias there.
+- `from`: every old source; "(part …)" when only part is used. The outline tool checks that every
+  old source appears at least once.
+- `notes`: New / Merge / Split / Rewrite / Move, and notes for the writer.
+
+## Steps
+
+### R0. Prepare the repository
+
+1. Run `git status` in the course repository. If there are uncommitted changes, ask the owner
+   whether to keep them. Never delete them yourself.
+2. List the branches (`git branch -a`, `git ls-remote --heads origin`). Unfinished branches are
+   reference material only, unless the owner says otherwise.
+3. Create a clean worktree from the committed source:
+   `git -C ../<course> worktree add -b revamp/guided ../<course>-revamp <source commit>`.
+   Write `<source commit>` at the top of `OUTLINE.md`.
+4. **Group B only: make the repository content-only** in the worktree.
+   - Write `course.json` (start from [`examples/guided-course/course.json`](examples/guided-course/course.json)):
+
+     | Field | Take it from |
+     |---|---|
+     | `id` | The repository name. It must equal the prefix of the old storage key (`PROGRESS_STORAGE_KEY` in `src/core/models/progress.ts`, e.g. `redis-learning-progress` → `redis`) |
+     | `name`, `subject` | The wordmark in the old navbar, and the technology's name |
+     | `description` | The old meta description or portal card text, as one sentence without the word "bite" |
+     | `brand.color` | `--color-brand-600` in the old `src/index.css` (white text sits on it) |
+     | `brand.scale`, `brand.gradient` | Optional: the old `--color-brand-50…950` values; three stops toward the old accent |
+     | `brand.logo`, `brand.favicon` | Leave out: every course shares the shell's mark in its brand colours |
+     | `codeLanguages` | The Prism languages the old `src/core/prism.ts` imported |
+
+   - Delete the app: `src/`, `public/`, `scripts/`, `views/`, `server.js`, `index.html`,
+     `package.json`, `package-lock.json`, `vite.config.ts`, `tsconfig*.json`, `node_modules/`,
+     `dist/`. Keep `prompts/` and `.git/`. The old lessons stay readable with
+     `git show <source commit>:public/content/…`.
+   - Copy [`examples/demo-course/.github/workflows/deploy.yml`](examples/demo-course/.github/workflows/deploy.yml)
+     unchanged. Reduce `.gitignore` to editor and system files. Rewrite `README.md`.
+5. Add a preview entry `<course>-revamp-dev` (an unused port) to `learning-portal/.claude/launch.json`.
+
+**Done when** `npm run dev -- ../<course>-revamp` opens the course.
+
+### R1. Diagnose
+
+Run `npm run revamp:diagnose -- ../<course>-revamp --write`. It writes the numbers into
+`revamp/DIAGNOSIS.md`. Then read at least five old lessons and add notes on wording, examples and
+how the lessons are split, each with the lesson name and a quoted sentence.
+
+**Done when** `DIAGNOSIS.md` has the numbers and at least five quoted observations.
+
+### R2. Plan the course pack
+
+1. **Target learner:** what they know before the course (e.g. "HTML, CSS and basic JavaScript").
+   Write it at the top of `OUTLINE.md`.
+2. **One everyday example setting** for the whole course.
+3. **Tracks and chapters:** 2–4 tracks; chapters by what the learner can do, ordered so that no
+   chapter needs a later one.
+4. **`OUTLINE.md`** in the format above, applying the merge/split and title rules of the content guide.
+5. **`content/glossary.json`** for the first track: each term and the lesson that defines it.
+6. **`course.json`:** add `format: "guided"`, `tracks` and `kinds`; remove "bite" from
+   `description` and `home.*` (leave `home.headline` out to get the guided default).
+7. Run `npm run revamp:outline -- ../<course>-revamp --write` to generate `content/topics.json`.
+
+**Done when** the outline tool reports no errors and covers every old source.
+
+### R3. Review 1: the outline
+
+The owner reads `OUTLINE.md`: tracks, chapters, lesson titles. Record the comments in
+`revamp/FEEDBACK.md`, change the outline, and run R2.7 again.
+
+**Done when** the owner approves the outline.
+
+### R4. The first chapter, and Review 2
+
+1. Write `revamp/BRIEFS.md` for every lesson of chapter 1: number, slug, `kind`, `goal`,
+   `requires`, the points of each section, and the facts you checked. Model:
+   `angular/revamp/BRIEFS.md`.
+2. Remove the old lessons from `content/lessons/` (group A) or the old content folder (group B).
+   Set `quiz/questions.json` and `content/legacy.json` to `[]` until R7.
+3. Write chapter 1 with the [lesson procedure](#writing-one-lesson) and its quiz.
+4. The owner reads it in the browser and comments in `FEEDBACK.md`. A comment that is a general
+   rule goes into [CONTENT_GUIDE.md](CONTENT_GUIDE.md), so every later course gets it.
+
+**Done when** the owner approves the voice of this course.
+
+#### Writing one lesson
+
+| # | Do |
+|---|---|
+| 1 | Take number, slug, `topic`, `kind`, `aliases` and sources from `OUTLINE.md` |
+| 2 | Read the old source (`git show <source commit>:<path>`) and the official documentation. The old lesson is a source of ideas; never copy its sentences |
+| 3 | Write the `goal`. If it cannot be reached in 7 minutes, report it so the lesson can be split |
+| 4 | List the new terms (one main, at most two minor) and add them to `glossary.json` |
+| 5 | Set `requires`: everything the lesson uses must be taught earlier. If something is missing, report it; do not squeeze it in |
+| 6 | Draft it with the template for its `kind` |
+| 7 | Check the facts: run the code and the mistakes, copy the real output. Leave out anything you could not check |
+| 8 | Decide whether a picture helps; add none if it does not |
+| 9 | Go through the self-check list |
+| 10 | `npm run validate -- ../<course>-revamp`, then read the lesson in the browser as a learner would |
+
+### R5. The remaining chapters
+
+In path order. For each chapter: write the lessons → its quiz → update the glossary → validate →
+click "Next" through the whole chapter in the browser → commit `Rewrite chapter <n>: <title>`.
+After each track, the owner reads three sample lessons.
+
+**Done when** every slug in `topics.json` has a file and `validate` shows no *still to finish*
+lesson items.
+
+### R6. Quiz for the whole course
+
+At least 8 questions per chapter, following the quiz rules of the content guide.
+
+**Done when** no chapter has fewer than 8 questions.
+
+### R7. Old links and progress
+
+1. **Group A:** check the `aliases` in front-matter against `OUTLINE.md`. Rebuild `legacy.json`
+   from the old version: replace each old slug in `lessons` with its new slug (an alias becomes
+   the slug of the lesson that holds it), remove duplicates, keep `id`, `slug` and `title`.
+2. **Group B:** create `legacy.json` with one entry per old long lesson: `id` (`lesson-NN`), the
+   old `slug` and `title`, and in `lessons` the new lessons that took content from it (the `from`
+   column):
+
+   ```json
+   [{ "id": "lesson-08", "slug": "expiration-and-key-lifetime", "title": "Expiration and Key Lifetime", "lessons": ["expire-and-ttl", "persist"] }]
    ```
 
-3. Work on a branch in the course repository (`git -C ../<course> switch -c bites`). Nothing is
-   published until that branch is merged into `main` and pushed.
-4. Keep the course's authoring contract (`prompts/*-authoring-prompt.md`, if it has one) open.
-   Its sources and its list of facts that are easy to get wrong still apply.
+**Done when** ten random old addresses each open the right lesson.
 
-## Step 1: Plan the topics and the bites
+### R8. Quality check
 
-Do this on paper before writing a file.
+1. `npm run validate -- ../<course>-revamp --strict` passes, and every *writing note* has been
+   dealt with (fixed, or judged fine).
+2. Check technical facts against the official documentation of the current version.
+3. In the browser:
 
-- **Topics.** Choose 8–14 topics that a learner would look for by name. They replace the three
-  levels, so group by subject, not by difficulty. Each needs an `id`, a `title`, a one-sentence
-  `blurb` and an `order`.
-- **Bites.** Split every long lesson into the separate ideas it teaches. One long lesson usually
-  becomes 5–9 bites. A bite teaches one idea; if its "In one line" sentence needs an "and", it
-  is two bites. Expect 120–220 bites for a 24-lesson course.
-- **Kinds.** Give each bite a kind. The default set (concept, api, technique, pattern, pitfall,
-  tool) fits programming courses. For any other subject, define your own in `course.json`.
-- **Coverage map.** For every old lesson, write down which bites replace it. You need this map
-  for `legacy.json` in step 4, and it is the check that nothing was dropped.
+   | # | Do | Expect |
+   |---|---|---|
+   | 1 | Open the home page | Main button "Start with lesson 1.1"; no "in any order" |
+   | 2 | From lesson 1.1, click "Next" to the end of chapter 1 | Right order, then "Next chapter: 2 · …" |
+   | 3 | Open a lesson with `requires` | "Before you start" links to the right lessons |
+   | 4 | Mark two lessons learned, go home | Main button "Continue: <first unlearned lesson>" |
+   | 5 | Open an old address | The new lesson |
+   | 6 | Take one chapter's quiz | Explanations shown; the lesson link opens the right lesson |
+   | 7 | 375 px wide, light and dark | No sideways scrolling; diagrams and code readable |
+   | 8 | Old progress: clear site storage, set `localStorage['<course>-learning-progress-v2']` with an alias slug learned, reload | The new lesson shows as learned |
 
-## Step 2: Write `course.json`
+**Done when** every row passes.
 
-Start from [`examples/demo-course/course.json`](examples/demo-course/course.json). Field by
-field, where the values come from in the old course:
+### R9. Publish (only with the owner's approval)
 
-| Field | Take it from |
-|---|---|
-| `id` | The repository name, exactly. It must equal the prefix of the old storage key (`PROGRESS_STORAGE_KEY` in `src/core/models/progress.ts`, e.g. `redis-learning-progress` → `redis`) |
-| `name`, `subject` | The wordmark in the old Navbar, and the technology's name |
-| `description` | The old `index.html` meta description or the portal card text, shortened to one sentence |
-| `brand.color` | `--color-brand-600` in the old `src/index.css`. The new shell puts white text on this colour, so use the 600 shade, not the lighter 500 |
-| `brand.scale` | Optional: copy the old `--color-brand-50` … `--color-brand-950` values for exact colours |
-| `brand.gradient` | Optional: three stops, from the brand colour toward the old accent colour |
-| `brand.logo`, `brand.favicon` | Leave both out. Every course uses the same logo, the bite mark, drawn in its brand gradient; only the colour differs. Do not copy the old `public/favicon.svg` |
-| `home.*` | Write a headline, three search words learners would type, the slug of a strong first bite, a code sample of at most 8 lines, and one quiz question for the preview |
-| `kinds` | Leave out for the default six, or list your own |
-| `codeLanguages` | The Prism languages the old `src/core/prism.ts` imported |
+1. Merge `revamp/guided` into `main` and push. The workflow validates in strict mode, builds with
+   the shell's `main` and deploys. If it fails, the previous site stays up; fix and push again.
+2. Repeat the R8 browser table on the live site.
+3. Update the course card in the portal (`index.html` in `learn-with-will.github.io`): lesson
+   count, hours, and a description without the word "bite". Ask the owner first.
+4. Update the tracking table in `course-shell/REVAMP_PLAN.md`.
 
-## Step 3: Write the content
-
-```text
-content/topics.json        from step 1
-content/lessons/<slug>.md  one file per bite
-quiz/questions.json        one array for the whole course
-```
-
-**Lessons.** Follow CONTENT_GUIDE.md exactly; the validator enforces it. In short: front-matter
-(`slug`, `title`, `topic`, `kind`, `summary`, `tags`, `related`), the "In one line" callout,
-then `## The idea`, `## See it`, optional `## Go deeper` and `## Watch out`, and `## Remember`
-with exactly three bullets. Every bite needs at least one visual and, in a course with code,
-at least one code block.
-
-- Carry the facts over from the existing lesson. Do not add claims the old lesson did not make
-  unless you verify them against the course's primary sources. Converting the format is not a
-  reason to invent content.
-- The old sections map roughly like this: *Concept Explanation* → The idea; *Worked Example* and
-  *Examples* → See it; *Options and Trade-offs* → a table; *Common Mistakes* → Watch out or a
-  bite of kind `pitfall`; *Summary* → Remember. *Learning Objectives*, *Flash Cards*, *Exercises*
-  and *Further Reading* have no place in a bite: fold what matters into the prose, turn good
-  flash cards into quiz questions, and drop the rest.
-- `related` needs 2–4 slugs that exist. Link the bites that came from the same long lesson.
-
-**Questions.** The five question types and their fields are unchanged, so most old questions
-move over as they are:
-
-1. Give each a course-wide unique id, `<topic>-NN` (the old ids `q1`, `q2` repeat in every file).
-2. Add `"topic"`, and `"lesson"` with the slug of the bite that answers it. That bite must be
-   in that topic.
-3. Every topic with lessons needs at least 8 questions. Write new ones where a topic is short,
-   each with an `explanation` and an answer that the linked bite supports.
-
-## Step 4: Write `content/legacy.json`
-
-One entry per old lesson, using the coverage map from step 1. Take `id`, `slug` and `title`
-from the old `public/content/course-manifest.json`:
-
-```json
-[
-  {
-    "id": "lesson-08",
-    "slug": "expiration-and-key-lifetime",
-    "title": "Expiration and Key Lifetime",
-    "lessons": ["expire-and-ttl", "persist", "passive-and-active-expiration", "ttl-and-writes"]
-  }
-]
-```
-
-Every old lesson must appear, with at least one bite. In strict mode an entry with an empty
-`lessons` list is an error.
-
-## Step 5: Replace the old shell
-
-In the course repository, once the new files are in place:
-
-- Delete the app: `src/`, `public/`, `scripts/`, `views/`, `server.js`, `index.html`,
-  `package.json`, `package-lock.json`, `vite.config.ts`, `tsconfig*.json`, and the local
-  `node_modules/` and `dist/`. Keep `prompts/` and `.git/`.
-- Replace `.github/workflows/deploy.yml` with
-  [`examples/demo-course/.github/workflows/deploy.yml`](examples/demo-course/.github/workflows/deploy.yml),
-  unchanged.
-- Rewrite `README.md`: what the course is, the folder layout, and the three commands below.
-- `.gitignore` only needs editor and system files; a course repository generates nothing.
-
-The repository should now contain `course.json`, `content/`, `quiz/`, optionally `assets/` and
-`prompts/`, the workflow, and the README.
-
-## Step 6: Check it
-
-```bash
-npm run validate -- ../<course> --strict
-npm run dev -- ../<course>
-```
-
-Validation must pass in strict mode with no warnings. Then look at the running site:
-
-- Home: name, headline, brand colour, featured bite, topic tiles and the quiz preview.
-- Lessons A–Z: every topic and kind filter has entries.
-- Three or four bites, including one with a diagram and one with code in each language the
-  course uses. Code must be highlighted.
-- A quick quiz, start to result.
-- An old address, `/lesson/<old-slug>`: it must land on the lesson list showing the bites that
-  replaced it.
-- Old progress: in the browser console run
-  `localStorage.setItem('<course>-learning-progress', JSON.stringify({ completedLessons: ['lesson-01'], bookmarkedLessons: [] }))`
-  after clearing the site's storage, reload, and check that the bites of lesson 1 show as learned.
-- Dark mode and a phone-width window.
-
-## Step 7: Publish
-
-1. Commit on the branch, merge into `main`, push. The workflow validates, builds with the
-   latest shell and deploys. GitHub Pages must already use the **GitHub Actions** source, which
-   is the case for every existing course.
-2. When the run is green, open `https://learn-with-will.github.io/<course>/`, a deep link to a
-   bite, and one old lesson address.
-3. Update the course's card in the portal (`index.html` in `learn-with-will.github.io`): the
-   `topics` count, `estimatedHours` and the description now describe bites, not 24 lessons.
-
-If the deploy fails, the previous site stays up. Fix the course and push again.
-
-## Starting a new course
-
-Skip the conversion: copy `examples/demo-course` into a new folder, set `id` to the new
-repository name, write `course.json`, topics, bites and questions as above (no `legacy.json`),
-and validate. Create the repository under the `learn-with-will` organisation, enable Pages with
-the GitHub Actions source, push, and add a card to the portal.
+**Done when** the live site passes R8 and the portal card is updated.
 
 ## Checklist
 
-- [ ] `id` equals the repository name and the old storage-key prefix
-- [ ] Every old lesson has a `legacy.json` entry with at least one bite
-- [ ] `npm run validate -- ../<course> --strict` passes
-- [ ] No app code, `package.json` or `course-manifest.json` left in the course repository
+- [ ] `id` is unchanged (and, for group B, equals the old storage-key prefix)
+- [ ] `content/topics.json` was generated from `revamp/OUTLINE.md`, not edited by hand
+- [ ] Every old slug is an alias of one lesson or appears in `legacy.json`
+- [ ] `npm run validate -- ../<course> --strict` passes; writing notes dealt with
+- [ ] No app code, `package.json` or `course-manifest.json` in the course repository
 - [ ] `deploy.yml` is the unchanged thin workflow
-- [ ] Old lesson address redirects; old progress is carried over
-- [ ] Live site, a deep link and the portal card checked after the deploy
+- [ ] Old addresses redirect; old progress is carried over
+- [ ] Live site and portal card checked after the deploy
