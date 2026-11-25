@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { checkCourseJson, coursePaths, normalizeCourse, readCourseJson } from './course-config.mjs';
 import { DIAGRAM_LANGS, maskFences, readJson, readLessonFiles } from './generate-manifest.mjs';
 import { parseDiagram } from '../src/app/shared/diagram/diagram-parser.ts';
+import { glossaryNotes, readGlossary, readabilityNotes } from './writing-notes.mjs';
 
 const SECTIONS = ['The idea', 'See it', 'Go deeper', 'Watch out', 'Remember'];
 const REQUIRED_SECTIONS = ['The idea', 'See it', 'Remember'];
@@ -610,11 +611,34 @@ export function validateCourse(courseDir, { strict = false } = {}) {
   const minutes = files.filter((f) => !f.error).map((f) => f.stats.minutes);
   const avg = minutes.length ? (minutes.reduce((a, b) => a + b, 0) / minutes.length).toFixed(1) : '0';
   const summary = `${course.name}: ${files.length} lessons (avg ${avg} min), ${bank.length} questions, ${legacy.length} legacy entries`;
-  return { errors, warnings, summary };
+
+  // ---- Writing notes (guided only; advice that never blocks a release) ------
+  const notes = [];
+  if (isGuided) {
+    const written = files.filter((f) => !f.error);
+    const glossary = readGlossary(join(paths.content, 'glossary.json'));
+    for (const p of glossary.problems) fail('glossary.json', p);
+    for (const e of glossary.entries) {
+      if (!slugPosition.has(e.definedIn)) fail('glossary.json', `"${e.term}": definedIn "${e.definedIn}" is not a lesson on the path`);
+    }
+    for (const n of glossaryNotes(glossary.entries, written, slugPosition)) notes.push(`[lessons/${n.file}] ${n.msg}`);
+    for (const f of written) {
+      const track = trackById.get(topicById.get(f.meta.topic)?.track);
+      if (track?.level !== 'beginner') continue;
+      for (const msg of readabilityNotes(f.body)) notes.push(`[lessons/${f.file}] ${msg}`);
+    }
+  }
+  return { errors, warnings, notes, summary };
 }
 
 /** Prints the result the way the CLI shows it. Returns true when the course may ship. */
-export function reportValidation({ errors, warnings, summary }, { strict = false } = {}) {
+export function reportValidation({ errors, warnings, notes = [], summary }, { strict = false } = {}) {
+  if (notes.length) {
+    console.log(`\nℹ ${notes.length} writing note(s) (advice only, never an error):`);
+    const shown = notes.slice(0, 12);
+    for (const n of shown) console.log('  - ' + n);
+    if (notes.length > shown.length) console.log(`  … and ${notes.length - shown.length} more`);
+  }
   if (warnings.length) {
     console.warn(`\n⚠ ${warnings.length} item(s) still to finish (errors with --strict):`);
     const shown = warnings.slice(0, 12);
